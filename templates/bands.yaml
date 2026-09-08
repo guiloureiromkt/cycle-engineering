@@ -1,0 +1,9 @@
+# cycle · response bands that close the loop (maintain).
+# Detection is deterministic (a versioned script); the model only enters from 2σ up.
+metric: <ci_test_failure_rate | post_deploy_5xx_rate | pr_cycle_time>
+baseline: rolling_30d
+rules: western_electric
+tiers:
+  1sigma: { action: log }
+  2sigma: { action: diagnose, tools: "Read,Grep,Bash(gh run view *)" }
+  3sigma: { action: propose, routes: [pull_request, "runbook:rollback-deploy"] }

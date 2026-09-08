@@ -1,0 +1,15 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "cycle-engineering",
+  "description": "Cycle Engineering: the AI-native build cycle of Gui Loureiro, packaged as a Claude Code plugin.",
+  "owner": { "name": "Gui Loureiro", "url": "https://guiloureiro.com.br" },
+  "plugins": [
+    {
+      "name": "cycle",
+      "description": "Changes how Claude Code works in a repository: nothing is implemented without a committed intent, spec and plan; the plan passes five gates before build; testing is a gauntlet with a separate critic; production deploy only with a named approval.",
+      "author": { "name": "Gui Loureiro" },
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}

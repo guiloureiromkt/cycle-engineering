@@ -1,0 +1,12 @@
+{
+  "gates": "lite",
+  "stateful": false,
+  "protected_branches": ["main"],
+  "models": {
+    "advocate": "inherit",
+    "council": "sonnet",
+    "verifier": "sonnet",
+    "research": "haiku",
+    "critic": "inherit"
+  }
+}

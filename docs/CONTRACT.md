@@ -1,0 +1,52 @@
+# Naming contract (read before touching anything)
+
+Marketplace: `cycle-engineering` (repo name). Plugin: `cycle`. Install: `claude plugin marketplace add guiloureiromkt/cycle-engineering` then `claude plugin install cycle@cycle-engineering`.
+
+## Names
+- Skills (own, 9): `cycle:using-cycle`, `cycle:intent`, `cycle:spec`, `cycle:plan`, `cycle:build`, `cycle:test`, `cycle:deploy`, `cycle:maintain`, `cycle:evolve`.
+- Skills (bundled copies from obra/superpowers, MIT, 8): `cycle:brainstorming`, `cycle:writing-plans`, `cycle:executing-plans`, `cycle:subagent-driven-development`, `cycle:tdd`, `cycle:verify-before-done`, `cycle:parallel-agents`, `cycle:worktrees`.
+- Skills (bundled, other): `cycle:gauntlet` (Shumer/robonuggets, CC BY 4.0).
+- Skills (own, rewritten in English, 3): `cycle:verification-gate`, `cycle:task-graph`, `cycle:adoption-filter`.
+- Commands: `/cycle`, `/cycle:init`, `/cycle:triage`. Agents: `verifier`, `devils-advocate`, `council`.
+- Any `cycle:<name>` referenced anywhere must exist as `skills/<name>/SKILL.md` (`tests/refs.test.mjs` enforces). Bundle it or rewrite the line.
+
+## Files in a user repo
+`intent/`, `specs/`, `plans/`, `evals/`, `.cycle/` (`config.json`, `gate.json`, `release-approval`, `work/<intent>/`, `work/.stop-warned`).
+`/cycle:init` creates ONLY `.cycle/` (config.json, gate.json, work/.gitkeep, .gitignore) and the CLAUDE.md block. It never copies templates. Skills read templates from the plugin root printed by the session hook (`plugin root: <path>`).
+CLAUDE.md block lives between `<!-- cycle:start -->` and `<!-- cycle:end -->`; init and uninstall operate only inside the markers.
+
+## Frontmatter
+Keys: `type`, `status`, `author`, `date`, `origin`, `intent`, `spec`, `accepted_by`, `approved_by`, `gates`.
+Statuses: intent `draft|accepted|closed` · spec `draft|approved` · plan `draft|accepted`.
+
+## Magic strings
+- Commit message containing `plan: unchanged` or `[plan-ok]` satisfies plan-sync.
+- `.cycle/work/<intent>/snapshot.md` modified less than 60 minutes ago (mtime) satisfies snapshot-guard.
+- Release: env `RELEASE_APPROVAL` or `.cycle/release-approval` containing today's date (YYYY-MM-DD). Written by a human outside the agent; `protect-cycle` blocks the agent from writing it or removing `.cycle/`.
+- While plugin `ciclo` 0.1.2 is installed on this machine, commits in THIS repo that touch non-.md files carry `(plano: sem mudança)` or stage `plans/`. After `cycle` 0.2.0 is installed: `(plan: unchanged)`.
+
+## Config (`.cycle/config.json`)
+```json
+{ "gates": "lite", "stateful": false, "protected_branches": ["main"],
+  "models": { "advocate": "inherit", "council": "sonnet", "verifier": "sonnet", "research": "haiku", "critic": "inherit" } }
+```
+- `gates`: `lite` (default) = devil's advocate always; council SUGGESTED to the user in one question when a trigger lights (money, hours, permission, schema, destructive data, user surface, or more than 8 files change), otherwise skipped and recorded as skipped in the plan. `full` = advocate and council always.
+- `models`: passed as the `model` argument when dispatching agents. The main session's model is the user's choice; the plugin never changes it.
+- `stateful: true` makes production deploy require a restore test newer than 30 days (`.cycle/work/<intent>/restore-test.md`).
+- `.cycle/gate.json`: `{ "patterns": [] }` — repo-specific deploy commands, lowercase substring match.
+
+## Hooks (Node, via `hooks/run.sh`)
+- Every gate checks `.cycle/` first (`cycleOn`): no `.cycle/`, no gate, no exception. Opt-out = the HUMAN deletes `.cycle/` in their own terminal.
+- Exit codes: 0 allow · 1 non-blocking error (stderr shown to the user; the action proceeds) · 2 block (stderr goes to Claude).
+- Internal-error rule, same in every hook: git unavailable or not a repo → allow (0); malformed JSON or unreadable config → block (2); node missing → `run.sh` prints "cycle-engineering: node not found on PATH. The cycle gates are NOT active. Install Node >= 18 and restart the session." and exits 1.
+- Hook stderr never contains "no such file" or "can't open" (Claude Code downgrades such exit-2 hooks to non-blocking).
+- Production defaults (regex on the lowercased command): `--prod\b`, `--target production`, `--env production`, `deploy.*production|production.*deploy`, `gh run rerun`, `gh workflow run`, `wrangler deploy`, `fly deploy`, `railway up`. Not matched: `NODE_ENV=production`, `grep production`, branch names containing production. Push: bare `git push` resolves the current branch (`git rev-parse --abbrev-ref HEAD`); `--tags` allowed; refspec matched with word boundaries.
+- Destructive (snapshot-guard): `git reset --hard`, `git clean -f`, `git checkout -- .`, `rm -rf <inside repo>` except node_modules|dist|build|.next|coverage|.cache|.turbo, `drop table|database|schema`, `migrate reset|down|fresh`, `truncate table`.
+- Stop reminder (save rule): at most once per 30 minutes per repo, never when `stop_hook_active` is true.
+- One `node` process per Bash call: `pre-bash.mjs` dispatches production-gate, plan-sync and snapshot-guard in-process. `protect-cycle.mjs` runs on `Write|Edit|MultiEdit|Bash`. `stop-uncommitted.mjs` on `Stop`. `session-start.mjs` on `SessionStart` (speaks in every repo: one line without `.cycle/`, full state with it).
+
+## Language
+English everywhere except `README.pt-BR.md` and the presentation (vault).
+
+## Sources and credits
+Anthropic (AI-Native SDLC playbook) · Jesse Vincent (obra/superpowers, MIT; SHA per skill from `~/.agents/.skill-lock.json`, the version actually copied) · Matt Pocock (grilling, MIT) · Matt Shumer and robonuggets (gauntlet, CC BY 4.0) · Rob Shocks (video reading).

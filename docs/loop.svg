@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="440" viewBox="0 0 600 440" role="img" aria-labelledby="t d">
+<title id="t">The Cycle Engineering loop</title>
+<desc id="d">Seven stages on a closed ring: intent, spec, plan, build, test, deploy, maintain, and back to intent. Plan and deploy are human gates. Evolve sits outside the ring and points at it.</desc>
+<style>
+  svg { color: #6e7781; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .lbl { font-size: 14px; font-weight: 600; fill: currentColor; text-anchor: middle; dominant-baseline: central; }
+  .sub { font-size: 10.5px; fill: currentColor; text-anchor: middle; }
+  .cap { font-size: 12px; fill: currentColor; }
+  .pill { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .gate { stroke: #d9772e; stroke-width: 2.5; }
+  .arc { fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .ev  { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-dasharray: 5 4; }
+</style>
+<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+<path class="arc" marker-end="url(#ah)" d="M342.0,68.1 A148,148 0 0 1 384.7,88.7"/>
+<path class="arc" marker-end="url(#ah)" d="M437.2,154.4 A148,148 0 0 1 447.7,200.6"/>
+<path class="arc" marker-end="url(#ah)" d="M429.0,282.6 A148,148 0 0 1 399.4,319.6"/>
+<path class="arc" marker-end="url(#ah)" d="M323.7,356.1 A148,148 0 0 1 276.3,356.1"/>
+<path class="arc" marker-end="url(#ah)" d="M200.6,319.6 A148,148 0 0 1 171.0,282.6"/>
+<path class="arc" marker-end="url(#ah)" d="M152.3,200.6 A148,148 0 0 1 162.8,154.4"/>
+<path class="arc" marker-end="url(#ah)" d="M215.3,88.7 A148,148 0 0 1 258.0,68.1"/>
+<rect class="pill" x="262.0" y="49.0" width="76" height="26" rx="13"/>
+<text class="lbl" x="300.0" y="62.0">intent</text>
+<rect class="pill" x="377.7" y="104.7" width="76" height="26" rx="13"/>
+<text class="lbl" x="415.7" y="117.7">spec</text>
+<rect class="pill gate" x="406.3" y="229.9" width="76" height="26" rx="13"/>
+<text class="lbl" x="444.3" y="242.9">plan</text>
+<text class="sub" x="444.3" y="268.9">five gates</text>
+<rect class="pill" x="326.2" y="330.3" width="76" height="26" rx="13"/>
+<text class="lbl" x="364.2" y="343.3">build</text>
+<rect class="pill" x="197.8" y="330.3" width="76" height="26" rx="13"/>
+<text class="lbl" x="235.8" y="343.3">test</text>
+<rect class="pill gate" x="117.7" y="229.9" width="76" height="26" rx="13"/>
+<text class="lbl" x="155.7" y="242.9">deploy</text>
+<text class="sub" x="155.7" y="268.9">release approval</text>
+<rect class="pill" x="146.3" y="104.7" width="76" height="26" rx="13"/>
+<text class="lbl" x="184.3" y="117.7">maintain</text>
+<text class="sub" x="244" y="52" text-anchor="end">back to intent</text>
+<rect class="pill" x="478.0" y="375.0" width="76" height="26" rx="13"/>
+<text class="lbl" x="516" y="388">evolve</text>
+<text class="sub" x="516" y="413">watches the method, proposes PRs</text>
+<path class="ev" marker-end="url(#ah)" d="M482,374 Q479.7,361.3 433.3,296.6"/>
+<rect x="24" y="404" width="22" height="12" rx="6" fill="none" stroke="#d9772e" stroke-width="2.5"/>
+<text class="cap" x="54" y="414">human gate</text>
+</svg>

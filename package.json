@@ -1,0 +1,12 @@
+{
+  "name": "cycle-engineering",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/hooks.test.mjs tests/refs.test.mjs",
+    "install-fresh": "bash tests/install-fresh.sh"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
