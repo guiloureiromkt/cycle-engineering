@@ -3,7 +3,7 @@ name: tdd
 description: Use when implementing any feature or bugfix, before writing implementation code
 ---
 
-> Source: obra/superpowers (MIT) · upstream SHA 98904a7d8e0e04b9bd46220b9b17298f45fe0b72 · copied 2026-09-03. Cross-references retargeted to cycle:*.
+> Source: obra/superpowers (MIT) · upstream SHA 98904a7d8e0e04b9bd46220b9b17298f45fe0b72 · copied 2026-09-03. Cross-references retargeted to cycle:*. **Diverged 2026-09-08** (prompt audit for Fable 5.1, CHANGELOG 0.2.1): refresh by merge, never overwrite.
 
 # Test-Driven Development (TDD)
 
@@ -12,8 +12,6 @@ description: Use when implementing any feature or bugfix, before writing impleme
 Write the test first. Watch it fail. Write minimal code to pass.
 
 **Core principle:** If you didn't watch the test fail, you don't know if it tests the right thing.
-
-**Violating the letter of the rules is violating the spirit of the rules.**
 
 ## When to Use
 
@@ -28,23 +26,9 @@ Write the test first. Watch it fail. Write minimal code to pass.
 - Generated code
 - Configuration files
 
-Thinking "skip TDD just this once"? Stop. That's rationalization.
+## The rule
 
-## The Iron Law
-
-```
-NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
-```
-
-Write code before the test? Delete it. Start over.
-
-**No exceptions:**
-- Don't keep it as "reference"
-- Don't "adapt" it while writing tests
-- Don't look at it
-- Delete means delete
-
-Implement fresh from tests. Period.
+No production code without a failing test first. Code written before its test gets deleted and reimplemented from the test, reference copy included: a test written to fit code that already exists passes whether or not that code is right, which is the one thing the cycle is there to catch.
 
 ## Red-Green-Refactor
 

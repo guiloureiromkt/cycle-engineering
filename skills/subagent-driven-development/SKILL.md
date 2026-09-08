@@ -3,7 +3,7 @@ name: subagent-driven-development
 description: Use when executing implementation plans with independent tasks in the current session
 ---
 
-> Source: obra/superpowers (MIT) · upstream SHA fbcd94ffcf589754a8ecfa59861cc8843313590e · copied 2026-09-03. Cross-references retargeted to cycle:*.
+> Source: obra/superpowers (MIT) · upstream SHA fbcd94ffcf589754a8ecfa59861cc8843313590e · copied 2026-09-03. Cross-references retargeted to cycle:*. **Diverged 2026-09-08** in `spec-reviewer-prompt.md` (prompt audit for Fable 5.1, CHANGELOG 0.2.1): refresh by merge, never overwrite.
 
 # Subagent-Driven Development
 

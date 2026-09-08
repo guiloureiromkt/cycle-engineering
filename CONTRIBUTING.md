@@ -23,7 +23,9 @@ No baseline, no review.
 
 ## Bundled skills
 
-`skills/` holds copies from other projects; `CREDITS.md` lists them. Do not patch a copy here. Propose the change upstream, then refresh the copy and update its `Source:` line with the new commit. `cycle:evolve` watches those upstream commits.
+`skills/` holds copies from other projects; `CREDITS.md` lists them. Upstream first is still the default: propose the change there, then refresh the copy and update its `Source:` line with the new commit. `cycle:evolve` watches those upstream commits.
+
+A copy may diverge when the change belongs to this method rather than to the upstream project — a prompt audit against a new model generation, a rule that only exists here. A diverged copy declares it on its `Source:` line, with the date and the CHANGELOG entry that explains it. From then on it is refreshed by merge, never overwritten, and `cycle:evolve` must not blank the marker.
 
 ## Reporting a problem
 

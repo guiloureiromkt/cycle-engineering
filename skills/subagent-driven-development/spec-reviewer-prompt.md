@@ -18,17 +18,13 @@ Task tool (general-purpose):
 
     [From implementer's report]
 
-    ## CRITICAL: Do Not Trust the Report
+    ## Verify independently
 
-    The implementer finished suspiciously quickly. Their report may be incomplete,
-    inaccurate, or optimistic. You MUST verify everything independently.
+    The report above is a claim, not evidence. Judge the code itself: read what
+    was actually written and compare it to the requirements, line by line. The
+    report tells you where to look; it does not tell you what is there.
 
-    **DO NOT:**
-    - Take their word for what they implemented
-    - Trust their claims about completeness
-    - Accept their interpretation of requirements
-
-    **DO:**
+    **What to do:**
     - Read the actual code they wrote
     - Compare actual implementation to requirements line by line
     - Check for missing pieces they claimed to implement

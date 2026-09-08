@@ -3,7 +3,7 @@ name: brainstorming
 description: "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation."
 ---
 
-> Source: obra/superpowers (MIT) · upstream SHA f260c775073816860fef8a37c032ac77e2ff5821 · copied 2026-09-03. Cross-references retargeted to cycle:*.
+> Source: obra/superpowers (MIT) · upstream SHA f260c775073816860fef8a37c032ac77e2ff5821 · copied 2026-09-03. Cross-references retargeted to cycle:*. **Diverged 2026-09-08** (prompt audit for Fable 5.1, CHANGELOG 0.2.1): refresh by merge, never overwrite.
 
 # Brainstorming Ideas Into Designs
 
@@ -17,11 +17,11 @@ Do NOT invoke any implementation skill, write any code, scaffold any project, or
 
 ## Anti-Pattern: "This Is Too Simple To Need A Design"
 
-Every project goes through this process. A todo list, a single-function utility, a config change — all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short (a few sentences for truly simple projects), but you MUST present it and get approval.
+Every project goes through this process. A todo list, a single-function utility, a config change — all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short, a few sentences for a truly simple project, but present it and get approval before implementing.
 
 ## Checklist
 
-You MUST create a task for each of these items and complete them in order:
+Create a task for each item and complete them in order:
 
 1. **Explore project context** — check files, docs, recent commits
 2. **Offer visual companion** (if topic will involve visual questions) — this is its own message, not combined with a clarifying question. See the Visual Companion section below.
@@ -153,7 +153,7 @@ A browser-based companion for showing mockups, diagrams, and visual options duri
 **Offering the companion:** When you anticipate that upcoming questions will involve visual content (mockups, layouts, diagrams), offer it once for consent:
 > "Some of what we're working on might be easier to explain if I can show it to you in a web browser. I can put together mockups, diagrams, comparisons, and other visuals as we go. This feature is still new and can be token-intensive. Want to try it? (Requires opening a local URL)"
 
-**This offer MUST be its own message.** Do not combine it with clarifying questions, context summaries, or any other content. The message should contain ONLY the offer above and nothing else. Wait for the user's response before continuing. If they decline, proceed with text-only brainstorming.
+**Send the offer as its own message**, with nothing else in it: no clarifying question, no context summary. It asks consent to open a local URL, and a consent question buried under other content gets answered by accident. Wait for the user's response before continuing. If they decline, proceed with text-only brainstorming.
 
 **Per-question decision:** Even after the user accepts, decide FOR EACH QUESTION whether to use the browser or the terminal. The test: **would the user understand this better by seeing it than reading it?**
 

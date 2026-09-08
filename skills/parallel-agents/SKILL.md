@@ -3,7 +3,7 @@ name: parallel-agents
 description: Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies
 ---
 
-> Source: obra/superpowers (MIT) · upstream SHA ebd0490e6b0bccfdb9f9c0cc9dd6a066036c8d89 · copied 2026-09-03. Cross-references retargeted to cycle:*.
+> Source: obra/superpowers (MIT) · upstream SHA ebd0490e6b0bccfdb9f9c0cc9dd6a066036c8d89 · copied 2026-09-03. Cross-references retargeted to cycle:*. **Diverged 2026-09-08** (prompt audit for Fable 5.1, CHANGELOG 0.2.1): refresh by merge, never overwrite.
 
 # Dispatching Parallel Agents
 
@@ -14,6 +14,8 @@ You delegate tasks to specialized agents with isolated context. By precisely cra
 When you have multiple unrelated failures (different test files, different subsystems, different bugs), investigating them sequentially wastes time. Each investigation is independent and can happen in parallel.
 
 **Core principle:** Dispatch one agent per independent problem domain. Let them work concurrently.
+
+REQUIRED SUB-SKILL: `cycle:task-graph` decides whether to split at all. It carries the false-edge test and the rule this skill omits: one merge owner, always the main session. Fan-out without a merge owner is where parallel work amplifies error instead of saving time.
 
 ## When to Use
 

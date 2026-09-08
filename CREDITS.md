@@ -10,4 +10,4 @@ Cycle Engineering is MIT (see `LICENSE`). It stands on the work below. Every bun
 | Matt Shumer and robonuggets | Gauntlet loop: technique and original prompt by Matt Shumer; packaged as a skill by robonuggets (`gauntlet-loop`) | `skills/gauntlet/` | CC BY 4.0, `LICENSES/gauntlet-CC-BY-4.0.txt` |
 | Rob Shocks | The video reading of the playbook that started this project | Nothing copied | None needed |
 
-Changes made to bundled copies: cross-references renamed to `cycle:*` so nothing points outside this repo; a `Source:` line added at the top. The text is otherwise the upstream's.
+Changes made to bundled copies: cross-references renamed to `cycle:*` so nothing points outside this repo; a `Source:` line added at the top. Where a copy has since diverged, its `Source:` line says so with the date and the CHANGELOG entry behind it; everything else is the upstream's.
