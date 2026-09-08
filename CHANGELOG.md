@@ -4,11 +4,24 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-09-08
+
+The published tree catches up with what the repository actually holds: the evals and the tests go in, and an orphan example goes out.
+
+### Added
+- `evals/` and `tests/` are now part of the published tree. `CONTRIBUTING.md` tells a contributor that `npm test` must pass on the pull request, and until now the published repository shipped neither the tests nor the eval suite that sentence refers to.
+
+### Removed
+- `examples/plano-desconto-checkout.md`, and the `examples/` folder with it. It was 29 KB of Portuguese carrying the pre-rename frontmatter keys (`tipo`, `status: rascunho`, `aceito-por`, `portoes`) and four references to `ciclo:` skills that no longer exist, in a repository whose 0.2.0 entry promised English throughout. Nothing linked to it: not the README, not `cycle:plan`, which stopped pointing at it during the rename. The decision to translate it or drop it was handed to the merge owner at release and never taken; it is taken here. The same document lives on, migrated to the English contract, as the fixture behind `evals/0003-five-gates`.
+
 ## [0.2.1] - 2026-09-08
 
 Prompt audit of the bundled skills against the [Claude Fable 5.1](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5-1) and [Claude Fable 5](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5) prompting guides. The nine skills copied from other projects were written for an earlier model generation, where forcefulness was load-bearing; on the current generation the same text over-applies, and an anxious prompt produces a hedging model. The twenty skills written for this plugin passed the audit with no findings.
 
 The report and the per-finding patch stay in the working repository, under `.cycle/`, which is not part of the published tree.
+
+### Added
+- `evals/`: the three cases the 0.2.0 entry below already described, built at last. `0001-route-to-spec`, `0002-plan-without-intent` and `0003-five-gates`, each with the real run behind it, the prompt as it was asked, an `accepted_if` checklist, and a fixture repository under `evals/fixtures/{a,b,c}/`. `npm run evals` assembles each fixture into a scratch directory, adds the `.cycle/` that turns the plugin on, and prints the prompt and the checks. `evals/README.md` covers how to run them and why they are JSON: `claude plugin eval`, the native runner, answers `plugin eval is currently in early access` on this account, so the case files wait for it.
 
 ### Changed
 - `cycle:verify-before-done`: the Iron Law block, the Gate Function pseudo-code, the Red Flags list, the Rationalization Prevention table and the "if you lie, you'll be replaced" line give way to the tested instruction from the Fable 5 guide's *Ground progress claims during long runs*, which Anthropic reports nearly eliminated fabricated status reports. The Common Failures table and the evidence patterns stay. 141 lines to 68.
@@ -20,7 +33,7 @@ The report and the per-finding patch stay in the working repository, under `.cyc
 
 Deliberately kept: the `MUST FAIL` in the red-green cycle, the three technical `NEVER`s in `testing-anti-patterns.md`, the gitignore check before creating a worktree, the required plan header, and the urgency in `cycle:brainstorming`'s trigger description — routing text may carry calibrated urgency.
 
-Not verified: this repository has no evals (`evals/` holds only `.gitkeep`, though the 0.2.0 entry below lists three), so the five removals ship as hypotheses with no RED to GREEN baseline attached. Building that baseline is the next intent.
+The evals now exist, but they have not been run against this release: the five removals above still ship as hypotheses, with no RED to GREEN baseline attached. Running the three cases is the next step, and the 0.2.0 entry below should be read as having described them a release early.
 
 ## [0.2.0] - 2026-09-03
 
@@ -57,6 +70,7 @@ Always-on context per session: **~1,816 tokens**, measured with `claude plugin d
 
 Portuguese prototype, local only. Plugin `ciclo`, bash hooks depending on `jq`, skills coupled to the author's own skill library and knowledge base. Never published.
 
-[Unreleased]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/guiloureiromkt/cycle-engineering/releases/tag/v0.2.0

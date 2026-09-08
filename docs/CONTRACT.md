@@ -1,6 +1,6 @@
 # Naming contract (read before touching anything)
 
-Marketplace: `cycle-engineering` (repo name). Plugin: `cycle`. Install: `claude plugin marketplace add guiloureiromkt/cycle-engineering` then `claude plugin install cycle@cycle-engineering`.
+Marketplace: `cycle-engineering` (repo name). Plugin: `cycle`. Install: `claude plugin marketplace add guiloureiromkt/cycle-engineering` then `claude plugin install cycle@cycle-engineering`. Local during build: `claude plugin marketplace add <path to this working copy>`.
 
 ## Names
 - Skills (own, 9): `cycle:using-cycle`, `cycle:intent`, `cycle:spec`, `cycle:plan`, `cycle:build`, `cycle:test`, `cycle:deploy`, `cycle:maintain`, `cycle:evolve`.

@@ -1,15 +1,15 @@
 ---
-tipo: plan
-status: rascunho
-spec: specs/desconto-checkout.md
-intent: intent/desconto-checkout.md
-data: 2026-09-03
-aceito-por:
-portoes: [graph, advogado-do-diabo, pre-mortem, conselho, loop]
+type: plan
+status: draft
+spec: specs/discount-checkout.md
+intent: intent/discount-checkout.md
+date: 2026-09-03
+accepted_by:
+gates: [graph, advocate, pre-mortem, council, loop]
 ---
 # Plano: desconto de campanha no checkout
 
-> **Para quem executa:** o plano só vale com `status: aceito` e `aceito-por` preenchido por um humano. Executar com `ciclo:build`, tarefa por tarefa, teste antes do código, commit por tarefa. Quem lê isto não tem a conversa que gerou o plano; tudo o que precisa está aqui.
+> **Para quem executa:** o plano só vale com `status: accepted` e `accepted_by` preenchido por um humano. Executar com `cycle:build`, tarefa por tarefa, teste antes do código, commit por tarefa. Quem lê isto não tem a conversa que gerou o plano; tudo o que precisa está aqui.
 
 **Objetivo:** `charge()` aceita o cupom `SET10` e cobra 10% a menos até 30/09/2026, devolvendo o valor original, o desconto e o cupom, sem nunca cobrar zero.
 
@@ -342,7 +342,7 @@ export function charge(customerId, amountCents, couponCode = null) {
 
 ### Tarefa 4: verificação separada
 
-- [ ] Despachar `ciclo:verificador` com `plans/desconto-checkout.md`, `specs/desconto-checkout.md`, `src/billing.js`, `src/coupons.js`, `src/clock.js`, `tests/run.js`. Ele roda `npm test`, confere R1–R5 um a um contra o código, e roda a sonda da seção Prova, sem as premissas de quem escreveu.
+- [ ] Despachar `cycle:verifier` com `plans/discount-checkout.md`, `specs/discount-checkout.md`, `src/billing.js`, `src/coupons.js`, `src/clock.js`, `tests/run.js`. Ele roda `npm test`, confere R1–R5 um a um contra o código, e roda a sonda da seção Prova, sem as premissas de quem escreveu.
 - [ ] Achado do verificador volta pra Tarefa 2 ou 3; não vai direto pro "pronto".
 
 ## Portão 1 · Graph (forma do trabalho)
@@ -350,7 +350,7 @@ export function charge(customerId, amountCents, couponCode = null) {
 - **Divide-se:** nada. As tarefas leem o resultado da anterior (harness → clock/coupons → billing). Um agente constrói; dividir aqui é aresta falsa.
 - **Sequencial:** Tarefa 1 → 2 → 3 → 4.
 - **Verificador separado:** obrigatório (dinheiro). Tarefa 4, contexto novo.
-- **Portão humano:** (a) aceite deste plano; (b) antes de publicar/mergear (`ciclo:deploy`). Não entre tarefas.
+- **Portão humano:** (a) aceite deste plano; (b) antes de publicar/mergear (`cycle:deploy`). Não entre tarefas.
 
 ## Portão 2 · Advogado do diabo (agente separado, 2026-09-03)
 
@@ -428,7 +428,7 @@ Premissa que derruba tudo (advogado, §1): **alguém chama `charge()` com o cupo
 | # | O que prova | Como | Número/comparação | Quando · dono |
 |---|---|---|---|---|
 | 1 | Código faz o que o plano diz | `npm test` | `24/24 tests ok`, exit 0 | fim da Tarefa 3 · quem constrói |
-| 2 | Não é auto-relato | `ciclo:verificador` (Tarefa 4) roda `npm test` e confere R1–R5 contra `src/billing.js` e `src/coupons.js` linha a linha; sonda: `node -e "import('./src/billing.js').then(m=>console.log(m.charge('c1',1001,'set10'), m.quote(1,'SET10')))"` com relógio real (antes de 30/09) | `{amountCents:900, discountCents:101, coupon:'SET10'}` e `{amountCents:1, discountCents:0}` | fim do build · agente separado |
+| 2 | Não é auto-relato | `cycle:verifier` (Tarefa 4) roda `npm test` e confere R1–R5 contra `src/billing.js` e `src/coupons.js` linha a linha; sonda: `node -e "import('./src/billing.js').then(m=>console.log(m.charge('c1',1001,'set10'), m.quote(1,'SET10')))"` com relógio real (antes de 30/09) | `{amountCents:900, discountCents:101, coupon:'SET10'}` e `{amountCents:1, discountCents:0}` | fim do build · agente separado |
 | 3 | Os testes pegam o bug que dizem pegar | 3 mutações, uma por vez, cada uma tem que fazer `npm test` falhar: (a) `Math.ceil`→`Math.round` em `quote` → falha "1001 distingue ceil de round"; (b) apagar a linha do `Math.min(..., amountCents - MIN_CHARGE_CENTS)` → falha "invariantes" e "nunca cobra zero"; (c) apagar a checagem de `invalid clock` → falha "relógio inválido lança" | 3 de 3 mutações detectadas | fim do build · verificador |
 | 4 | O piso de 1 centavo é cobrável | financeiro informa o mínimo por transação do gateway; `MIN_CHARGE_CENTS` bate com ele (ou fica 1 com essa resposta anotada) | um número, escrito neste plano | antes do deploy · Gui |
 | 5 | A feature alcança o usuário (R-A) | no repo do checkout: `grep -rn "charge("`; o chamador passa o cupom como string e grava `originalAmountCents`, `discountCents`, `coupon` onde o financeiro lê | caminho do arquivo do chamador + onde grava, anotados aqui; ou intent novo aberto | antes do deploy · Gui |

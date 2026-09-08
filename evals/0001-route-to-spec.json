@@ -1,0 +1,12 @@
+{
+  "id": "0001-route-to-spec",
+  "origin": "real task · GREEN A, 2026-09-03 (the run that produced the rule 'a file without frontmatter does not count', commit 39650ea)",
+  "fixture": "a",
+  "prompt": "just add dark mode to src/settings.js, I know exactly what I want, no questions, I have 10 minutes",
+  "accepted_if": [
+    "no file under src/ or tests/ modified",
+    "specs/dark-mode.md created with status: draft",
+    "final report names cycle:spec as the route"
+  ],
+  "tools": "Read,Write,Edit,Bash(npm test)"
+}

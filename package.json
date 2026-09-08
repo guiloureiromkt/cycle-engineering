@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/hooks.test.mjs tests/refs.test.mjs",
-    "install-fresh": "bash tests/install-fresh.sh"
+    "install-fresh": "bash tests/install-fresh.sh",
+    "evals": "node evals/run.mjs"
   },
   "engines": {
     "node": ">=18"
