@@ -1,0 +1,180 @@
+{
+  "seats": [
+    {
+      "id": "user",
+      "always": true,
+      "brief": "The intent's target user. Walk the screens and flows as that person: what changes for me, what gets in my way, where I can't find this."
+    },
+    {
+      "id": "maintainer",
+      "always": true,
+      "brief": "The engineer who picks this up in six months without the conversation. Trace every file the plan names and enumerate what I won't understand and what is missing from the plan."
+    },
+    {
+      "id": "payer",
+      "always": true,
+      "brief": "The budget owner. Count what this costs after it ships (infra, licenses, people's hours) and what can be cut without losing the intent's outcome."
+    },
+    {
+      "id": "security",
+      "always": true,
+      "brief": "Who answers for a leak and for privacy law. Adversarial simulation: what new data comes in, where it lives, who sees it, what is destructive."
+    },
+    {
+      "id": "operator",
+      "always": true,
+      "brief": "Who deploys, backs up and answers the 3 a.m. alert. Backward reasoning from the incident: how is this undone, what is monitored, what breaks silently."
+    }
+  ],
+  "pool": [
+    {
+      "id": "marketing",
+      "triggers": [
+        "campaign",
+        "launch",
+        "pricing page",
+        "landing",
+        "promotion",
+        "coupon"
+      ],
+      "knowledge": null,
+      "skill": "marketing:campaign-plan",
+      "brief": "Who decides where the money goes. Compare the plan against the campaign it serves; enumerate what a customer sees first and what would make me move budget or ignore it."
+    },
+    {
+      "id": "content",
+      "triggers": [
+        "copy",
+        "banner",
+        "email",
+        "post",
+        "newsletter",
+        "campaign"
+      ],
+      "knowledge": null,
+      "skill": "marketing:content-creation",
+      "brief": "Who produces the content. Walk the plan as a brief: does what ships become a piece, a format and a timing, or a curiosity? What is shown the day the campaign ends?"
+    },
+    {
+      "id": "ux",
+      "triggers": [
+        "screen",
+        "form",
+        "flow",
+        "page",
+        "modal",
+        "wizard",
+        "onboarding"
+      ],
+      "knowledge": null,
+      "skill": "design:design-critique",
+      "brief": "The designer who watches people use it. Simulate the first use, the error path and the return visit; enumerate friction and the message the person sees when it fails."
+    },
+    {
+      "id": "ui",
+      "triggers": [
+        "screen",
+        "component",
+        "button",
+        "table",
+        "chart",
+        "theme"
+      ],
+      "knowledge": null,
+      "skill": "design:accessibility-review",
+      "brief": "Who owns the visual system and accessibility. Inspect the plan's screens against the design system and the accessibility floor; name the element that breaks either."
+    },
+    {
+      "id": "cx",
+      "triggers": [
+        "support",
+        "ticket",
+        "refund",
+        "customer",
+        "onboarding",
+        "notification"
+      ],
+      "knowledge": null,
+      "skill": null,
+      "brief": "Who hears the customer after the sale. Replay the customer's week after this ships: what do they ask support, where do they wait, where do they leave, which number on screen must match which number charged."
+    },
+    {
+      "id": "brand-voice",
+      "triggers": [
+        "copy",
+        "banner",
+        "email",
+        "notification",
+        "microcopy",
+        "message"
+      ],
+      "knowledge": null,
+      "skill": "marketing:brand-review",
+      "brief": "Who guards how the brand sounds. Compare every sentence a customer reads against the voice rules; name the one that sounds like a template and say who reviewed it."
+    },
+    {
+      "id": "commercial",
+      "triggers": [
+        "pricing",
+        "contract",
+        "tier",
+        "discount",
+        "coupon",
+        "renewal",
+        "quote"
+      ],
+      "knowledge": null,
+      "skill": null,
+      "brief": "Who sells it. Count the deals this changes and the objection it creates; reason backward from the renewal conversation; ask whether the next campaign needs a code change."
+    },
+    {
+      "id": "legal",
+      "triggers": [
+        "contract",
+        "personal data",
+        "terms",
+        "consent",
+        "lgpd",
+        "gdpr"
+      ],
+      "knowledge": null,
+      "skill": null,
+      "brief": "Who signs for compliance. Enumerate the clause, the law or the consent the plan touches, and the one it forgets."
+    },
+    {
+      "id": "data",
+      "triggers": [
+        "metric",
+        "analytics",
+        "report",
+        "dashboard",
+        "tracking",
+        "event"
+      ],
+      "knowledge": null,
+      "skill": null,
+      "brief": "Who reads the numbers. Trace each metric the plan promises to the event that produces it; name the number that will be wrong or missing."
+    }
+  ],
+  "cap": 9,
+  "joker": {
+    "enabled": true,
+    "domains": [
+      "supplier",
+      "regulator",
+      "platform",
+      "people",
+      "dependency",
+      "market",
+      "infrastructure"
+    ]
+  },
+  "scenarios": {
+    "horizons": [
+      "the day after",
+      "six months",
+      "legacy"
+    ],
+    "futures_per_horizon": "2-3, unweighted, each with driver, weak signal and inversion"
+  }
+}

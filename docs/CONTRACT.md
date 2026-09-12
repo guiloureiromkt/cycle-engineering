@@ -7,17 +7,17 @@ Marketplace: `cycle-engineering` (repo name). Plugin: `cycle`. Install: `claude 
 - Skills (bundled copies from obra/superpowers, MIT, 8): `cycle:brainstorming`, `cycle:writing-plans`, `cycle:executing-plans`, `cycle:subagent-driven-development`, `cycle:tdd`, `cycle:verify-before-done`, `cycle:parallel-agents`, `cycle:worktrees`.
 - Skills (bundled, other): `cycle:gauntlet` (Shumer/robonuggets, CC BY 4.0).
 - Skills (own, rewritten in English, 3): `cycle:verification-gate`, `cycle:task-graph`, `cycle:adoption-filter`.
-- Commands: `/cycle`, `/cycle:init`, `/cycle:triage`. Agents: `verifier`, `devils-advocate`, `council`.
+- Commands: `/cycle`, `/cycle:init`, `/cycle:triage`. Agents: `verifier`, `devils-advocate`, `council`, `joker` (the Mule).
 - Any `cycle:<name>` referenced anywhere must exist as `skills/<name>/SKILL.md` (`tests/refs.test.mjs` enforces). Bundle it or rewrite the line.
 
 ## Files in a user repo
-`intent/`, `research/`, `specs/`, `plans/`, `evals/`, `.cycle/` (`config.json`, `gate.json`, `release-approval`, `work/<intent>/`, `work/.stop-warned`).
+`intent/`, `research/`, `specs/`, `plans/`, `evals/`, `.cycle/` (`config.json`, `gate.json`, `council.json`, `release-approval`, `work/<intent>/`, `work/.stop-warned`).
 `research/<name>.md` is committed next to `specs/` and `plans/`, not under `.cycle/work/`, because it authorizes the spec (the same reason the intent is committed). Its evidence (screenshots) lives under `research/<name>/`.
 `/cycle:init` creates ONLY `.cycle/` (config.json, gate.json, work/.gitkeep, .gitignore) and the CLAUDE.md block. It never copies templates. Skills read templates from the plugin root printed by the session hook (`plugin root: <path>`).
 CLAUDE.md block lives between `<!-- cycle:start -->` and `<!-- cycle:end -->`; init and uninstall operate only inside the markers.
 
 ## Frontmatter
-Keys: `type`, `status`, `author`, `date`, `origin`, `intent`, `research`, `spec`, `depth`, `accepted_by`, `approved_by`, `gates`.
+Keys: `type`, `status`, `author`, `date`, `origin`, `intent`, `research`, `spec`, `depth`, `accepted_by`, `approved_by`, `gates`, `council`, `joker`.
 Statuses: intent `draft|accepted|closed` · research `draft|done` · spec `draft|approved` · plan `draft|accepted`.
 
 ## Magic strings
@@ -29,7 +29,7 @@ Statuses: intent `draft|accepted|closed` · research `draft|done` · spec `draft
 ## Config (`.cycle/config.json`)
 ```json
 { "gates": "lite", "stateful": false, "protected_branches": ["main"],
-  "models": { "advocate": "inherit", "council": "sonnet", "verifier": "sonnet", "sweeps": "haiku", "research": "inherit", "critic": "inherit" },
+  "models": { "advocate": "inherit", "council": "sonnet", "verifier": "sonnet", "sweeps": "haiku", "research": "inherit", "critic": "inherit", "joker": "sonnet" },
   "knowledge": [] }
 ```
 - `gates`: `lite` (default) = devil's advocate always; council SUGGESTED to the user in one question when a trigger lights (money, hours, permission, schema, destructive data, user surface, or more than 8 files change), otherwise skipped and recorded as skipped in the plan. `full` = advocate and council always.
@@ -37,6 +37,12 @@ Statuses: intent `draft|accepted|closed` · research `draft|done` · spec `draft
 - `knowledge`: list of `{name, kind: notebooklm | vault | folder | url, id, areas: []}` the research stage queries when `areas` match the intent. Missing key = empty list. The main session's model is the user's choice; the plugin never changes it.
 - `stateful: true` makes production deploy require a restore test newer than 30 days (`.cycle/work/<intent>/restore-test.md`).
 - `.cycle/gate.json`: `{ "patterns": [] }` — repo-specific deploy commands, lowercase substring match.
+
+## Council seats (`.cycle/council.json`, template in `templates/`)
+- `seats` (five, `always: true`), `pool` (`{id, triggers, knowledge, skill, brief}`), `cap` (9), `joker` (`enabled`, `domains`), `scenarios` (`horizons`, `paths`). Missing file = the template's defaults.
+- Resolution is a script, not prose: `scripts/resolve-seats.mjs plans/<x>.md [--extra ids]` matches triggers as whole words against the plan text, sits the `always` seats, then lit pool seats in pool order up to `cap`, and prints seats, dropped (with reason), a summary line and a cost hint. `cycle:plan` pastes the summary.
+- A `skill` names a host skill the cycle never bundles (Anthropic's knowledge-work plugins: `claude plugin marketplace add anthropics/knowledge-work-plugins`); when absent the seat says "lens not installed; general practice". A `knowledge` id must exist in `config.knowledge`; a knowledge-backed seat summarises and never quotes sensitive content verbatim into the plan.
+- The joker is the Mule: dispatched separately, in a fresh context, on `models.joker`, **after** the risks table (advocate + pre-mortem + council rows) is committed; its shock must be absent from that table. The scenario seat writes no weights on futures and leaves `Signposts:` lines that the plan carries under `## Signposts` and `cycle:maintain` reads.
 
 ## Hooks (Node, via `hooks/run.sh`)
 - Every gate checks `.cycle/` first (`cycleOn`): no `.cycle/`, no gate, no exception. Opt-out = the HUMAN deletes `.cycle/` in their own terminal.

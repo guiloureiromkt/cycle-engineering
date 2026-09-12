@@ -11,7 +11,7 @@ Cycle Engineering is a Claude Code plugin that runs the whole build cycle inside
 In a repository with a `.cycle/` directory:
 
 - Claude will not edit code without an accepted plan (`plans/<name>.md`, `status: accepted`, accepted by a named person). The plan needs an approved spec. The spec needs an accepted intent.
-- Before build, a devil's advocate in a fresh context attacks the plan. When the change touches money, hours, permissions, schema, destructive data or a user-facing surface, a council of five reviews it too.
+- Before build, a devil's advocate in a fresh context attacks the plan. When the change touches money, hours, permissions, schema, destructive data or a user-facing surface, a council reviews it too: five engineering seats always, a pool of marketing, content, UX, UI, CX, brand-voice, commercial, legal and data seats that sit when the plan lights their triggers, and a scenario seat that reads the plan across horizons without betting on one future. Then the Mule, a separate fresh-context agent, injects one improbable external shock and says what breaks.
 - Before the session says "done", a verifier in a separate context runs what was built.
 - A hook blocks production deploys unless a human wrote today's date into `.cycle/release-approval` (or set `RELEASE_APPROVAL`). The agent is blocked from writing that file.
 - A hook blocks destructive commands (`git reset --hard`, `rm -rf` inside the repo, `drop table`, `migrate reset`) unless a snapshot note from the last hour exists in `.cycle/work/`.
@@ -81,8 +81,9 @@ Outside the ring sits `cycle:evolve`: it watches new models, skills and practice
 }
 ```
 
-- `gates`: `lite` runs the devil's advocate on every plan and asks you, in one question, whether to call the council when a trigger lights (money, hours, permission, schema, destructive data, user surface, or more than 8 files). `full` runs both every time.
+- `gates`: `lite` runs the devil's advocate on every plan and asks you, in one question (with the seat ids, the count and a rough cost), whether to call the council and the Mule when a trigger lights (money, hours, permission, schema, destructive data, user surface, or more than 8 files). `full` runs both every time.
 - `models`: the model handed to each sub-agent when it is dispatched. `sweeps` is the cheap first pass inside `cycle:intent`; `research` is the stage-2 researcher (`inherit` by default: research is not where to save tokens). Your main session keeps the model you chose; the plugin never changes it.
+- `.cycle/council.json`: the council's seats — five defaults, a pool lit by triggers (each seat may name a corpus from `knowledge` or a host skill as its lens; skill-backed seats need Anthropic's knowledge-work plugins installed separately), a `cap` of nine, the Mule's `domains`, the scenario horizons. `scripts/resolve-seats.mjs` resolves them; `models.joker` is the Mule's model.
 - `knowledge`: your own sources for the research stage, `{name, kind: notebooklm | vault | folder | url, id, areas: []}`. Empty by default; the stage works without it.
 - `stateful`: set `true` when the repo owns a database or user files. Production deploy then requires a restore test newer than 30 days (`.cycle/work/<intent>/restore-test.md`).
 - `protected_branches`: a `git push` to any of these counts as a production deploy.

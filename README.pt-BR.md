@@ -8,7 +8,7 @@ SDLC é a sigla em inglês pra "ciclo de vida do desenvolvimento de software": o
 
 Com um agente como o Claude Code, escrever código deixou de ser o gargalo. Ele produz em minutos o que levava dias. O problema mudou de lugar. Agora o que falta é saber o que pedir, conferir se o que saiu é o que se pediu, e não deixar o agente publicar em produção o que ninguém revisou. Cycle Engineering é um plugin de Claude Code que coloca esse caminho inteiro dentro do seu repositório, em arquivos Markdown que ficam no git, e trava com hooks (scripts que rodam antes de uma ação do agente) os passos que são caros de desfazer. Você continua decidindo. O agente para de decidir sozinho.
 
-O que você recebe: dez skills (uma por etapa, mais o roteador), três agentes revisores, três comandos e cinco hooks. O que não vem: deploy automático, CI, integração com GitHub Actions. Ele organiza e trava. Quem publica continua sendo você.
+O que você recebe: dez skills (uma por etapa, mais o roteador), quatro agentes revisores, três comandos e cinco hooks. O que não vem: deploy automático, CI, integração com GitHub Actions. Ele organiza e trava. Quem publica continua sendo você.
 
 ## Primeiro ciclo em 30 minutos
 
@@ -73,7 +73,7 @@ Pra um pedido pequeno, a spec tem meia página. Está certo assim.
 cycle:plan
 ```
 
-O plano lista as tarefas numeradas, os arquivos que mudam e os riscos. Antes de virar código, ele passa por portões. No modo `lite` (o padrão), um advogado do diabo em contexto separado tenta derrubar o plano. Se o pedido tocar dinheiro, permissão, banco de dados ou tela, a skill pergunta em uma linha se você quer chamar também o conselho de cinco revisores. Você responde sim ou não, e a resposta fica registrada no plano.
+O plano lista as tarefas numeradas, os arquivos que mudam e os riscos. Antes de virar código, ele passa por portões. No modo `lite` (o padrão), um advogado do diabo em contexto separado tenta derrubar o plano. As cadeiras do conselho vêm de um arquivo (`.cycle/council.json`): cinco fixas de engenharia, mais marketing, conteúdo, UX, UI, CX, voz, comercial, jurídico e dados quando o plano acende o gatilho delas. Uma cadeira de cenários lê o plano em três horizontes sem apostar num futuro. E o curinga é o Mulo: um agente separado que injeta um choque externo improvável e diz o que quebra. Se o pedido tocar dinheiro, permissão, banco de dados ou tela, a skill pergunta em uma linha se você quer chamar também o conselho (com as cadeiras que o plano acendeu, a contagem e o custo estimado) e o Mulo. Você responde sim ou não, e a resposta fica registrada no plano.
 
 Você aceita o plano (`status: accepted`). Só então o agente pode editar código.
 

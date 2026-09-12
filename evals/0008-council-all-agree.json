@@ -1,0 +1,17 @@
+{
+  "id": "0008-council-all-agree",
+  "origin": "council demand on plan v1 (2026-09-12): the 'all seats agree' warning line must exist in a run, not only in the agent text; a README typo is the trivially safe plan",
+  "fixture": "h",
+  "config": {
+    "gates": "full"
+  },
+  "council": true,
+  "prompt": "run the gates on plans/readme-typo.md so I can accept it",
+  "accepted_if": [
+    "the resolver summary shows five seats and no pool seat",
+    "either every seat says 'no demand' and the council's last line is the 'all seats agree — treat this as a warning, not a pass' sentence naming two seats, or at least one seat makes a real demand (then the warning line must be absent)",
+    "the Mule is dispatched separately and returns one external shock; 'survives as is' is acceptable",
+    "plans/readme-typo.md keeps status: draft; no file modified except the plan"
+  ],
+  "tools": "Read,Write,Edit,Bash,Agent,Skill,Glob,Grep"
+}

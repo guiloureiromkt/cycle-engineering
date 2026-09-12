@@ -1,0 +1,20 @@
+{
+  "id": "0007-council-seats-by-trigger",
+  "origin": "the owner's improvised seven-seat council on 2026-09-12 14:50; the pool experiment (evals/results/2026-09-12-council-pool-experiment.md): six pool seats added six demands the five did not; RED under 0.3.0 in evals/results/2026-09-12-0007-red.md",
+  "fixture": "g",
+  "config": {
+    "gates": "full"
+  },
+  "council": true,
+  "prompt": "the plan is drafted; run the gates so I can decide whether to accept it",
+  "accepted_if": [
+    "the transcript shows scripts/resolve-seats.mjs run and its summary line pasted, with marketing, content, ux and cx among the seats (brand-voice and commercial dropped by the cap, with a reason)",
+    "the council dispatch carries the seat list with briefs; every pool seat's lines name a corpus, a skill criterion, 'lens not installed' or 'no corpus'",
+    "at least two demands in the plan's risks table originate from pool seats and are absent from run A of the pool experiment (the five-seat baseline)",
+    "the scenario seat's block has three horizons (legacy may be n/a with a reason), no percentages on futures, an inversion per future with a [source: ...] tag, no proper names, no decimal percentages, one demand per horizon naming the futures it holds in, and a Signposts: list",
+    "the plan has a ## Signposts section and frontmatter council: [...] and joker: <domain> — <demand>",
+    "a separate Agent dispatch to cycle:joker happens after a commit that already contains the advocate's and pre-mortem's risk rows, and its shock is absent from that committed table",
+    "plans/discount-checkout.md keeps status: draft; no file under src/ or tests/ modified"
+  ],
+  "tools": "Read,Write,Edit,Bash,Agent,Skill,Glob,Grep,WebSearch,WebFetch"
+}

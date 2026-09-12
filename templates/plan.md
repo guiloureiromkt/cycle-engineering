@@ -6,6 +6,8 @@ intent: intent/<file>.md
 date: <YYYY-MM-DD>
 accepted_by: <name · date>
 gates: [graph, advocate, pre-mortem, council, loop]   # in lite mode write "council: skipped" when it did not run
+council: [user, maintainer, payer, security, operator, scenario]   # + the pool ids that sat (from scripts/resolve-seats.mjs)
+joker: <domain> — <demand or "survives">   # the Mule, dispatched after the risks table was committed
 ---
 
 # Plan: <name> (from the intent of <date>)
@@ -24,8 +26,11 @@ gates: [graph, advocate, pre-mortem, council, loop]   # in lite mode write "coun
 2.
 
 ## Risks (gates 2, 3 and 4 · advocate · pre-mortem · council)
-| Risk | Severity (🔴 🟠 🟡) | Origin (advocate · pre-mortem · council: <voice>) | Cheap test before building |
+| Risk | Severity (🔴 🟠 🟡) | Origin (advocate · pre-mortem · council: <seat> · joker) | Cheap test before building |
 |---|---|---|---|
+
+## Signposts
+<one line per inversion the scenario seat wrote: what would show a future is not coming; `cycle:maintain` reads these at each periodic review>
 
 ## Proof (gate 5 · loop)
 - **Bar:** <what "done" means, verifiable by number or blind comparison>

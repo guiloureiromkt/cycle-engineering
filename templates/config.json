@@ -1,14 +1,17 @@
 {
   "gates": "lite",
   "stateful": false,
-  "protected_branches": ["main"],
+  "protected_branches": [
+    "main"
+  ],
   "models": {
     "advocate": "inherit",
     "council": "sonnet",
     "verifier": "sonnet",
     "sweeps": "haiku",
     "research": "inherit",
-    "critic": "inherit"
+    "critic": "inherit",
+    "joker": "sonnet"
   },
   "knowledge": []
 }

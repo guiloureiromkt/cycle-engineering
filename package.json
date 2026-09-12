@@ -3,10 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/hooks.test.mjs tests/refs.test.mjs tests/grader.test.mjs",
+    "test": "node --test tests/hooks.test.mjs tests/refs.test.mjs tests/grader.test.mjs tests/council.test.mjs",
     "install-fresh": "bash tests/install-fresh.sh",
     "evals": "node evals/run.mjs",
-    "grade-research": "node evals/grade-research.mjs"
+    "grade-research": "node evals/grade-research.mjs",
+    "resolve-seats": "node scripts/resolve-seats.mjs"
   },
   "engines": {
     "node": ">=18"

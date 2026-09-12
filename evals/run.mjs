@@ -39,6 +39,12 @@ for (const c of cases) {
   mkdirSync(join(dest, '.cycle', 'work'), { recursive: true });
   cpSync(configTemplate, join(dest, '.cycle', 'config.json'));
   writeFileSync(join(dest, '.cycle', 'gate.json'), readFileSync(join(root, 'templates', 'gate.json')));
+  // A case may override config keys (e.g. gates: full) and ask for the council seat file.
+  if (c.config) {
+    const cfg = JSON.parse(readFileSync(join(dest, '.cycle', 'config.json'), 'utf8'));
+    writeFileSync(join(dest, '.cycle', 'config.json'), JSON.stringify({ ...cfg, ...c.config, models: { ...cfg.models, ...(c.config.models ?? {}) } }, null, 2) + '\n');
+  }
+  if (c.council) cpSync(join(root, 'templates', 'council.json'), join(dest, '.cycle', 'council.json'));
 
   // A user repo carries the block /cycle:init writes; a subagent in a scratch dir gets no SessionStart,
   // so the block is the only thing that tells it to route. Same text as templates/claude-md-block.md.

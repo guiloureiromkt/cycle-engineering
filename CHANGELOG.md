@@ -4,6 +4,29 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-12
+
+Gate 4 stops being five fixed engineering voices. The owner's diagnosis (12/09): the council sat on marketing products for nine days with no marketing seat, and he improvised two seats by hand in a prompt. Before writing the plan, the premise was tested: on a coupon-and-banner plan, six pool seats with briefs only (no corpus, no skill) produced six demands the five engineering seats did not, at +11% tokens (`evals/results/2026-09-12-council-pool-experiment.md`).
+
+Gate 4 measured on fixtures under the installed 0.4.0 (fresh `claude -p`): a nine-seat council plus the Mule plus the advocate cost US$4.6–5.4 per plan (0007); five seats plus the Mule US$2.6–2.8 (0008); lite mode with the council pending US$3.2 (0006). The council alone: five seats ≈24k tokens, eleven seats ≈26.5k (`evals/results/2026-09-12-council-pool-experiment.md`).
+
+Always-on context per session: **~1,958 tokens**, measured with `claude plugin details cycle@cycle-engineering` on the installed 0.4.0 (2026-09-12). 0.3.0 measured ~1,888: the `joker` agent adds ~70. `npm run install-fresh` passes on a temporary HOME.
+
+### Added
+- `.cycle/council.json` (template `templates/council.json`, seeded by `/cycle:init`): five default seats, a pool (marketing, content, ux, ui, cx, brand-voice, commercial, legal, data) with whole-word triggers, optional `knowledge` (a corpus id) and `skill` (a host skill as lens — Anthropic's knowledge-work plugins, installed separately), a `cap` of nine, the Mule's `domains`, the scenario horizons and paths.
+- `scripts/resolve-seats.mjs` (`npm run resolve-seats`): plan + council file → seats, dropped seats with reason, a summary line and a cost hint. `tests/council.test.mjs` covers the template's shape, fixture g's resolution, the cap, `--extra`, and the no-file defaults.
+- `agents/joker.md`: the Mule. Dispatched separately, in a fresh context, on `models.joker` (default `sonnet`), after the risks table is committed; one improbable external shock, what breaks, what survives, one demand or "survives as is".
+- Evals `0007-council-seats-by-trigger` (fixture g) and `0008-council-all-agree` (fixture h); `evals/run.mjs` accepts `config` and `council` per case.
+
+### Changed
+- `agents/council.md`: takes the resolved seat list; `Skill` tool so a named lens can be applied; the scenario seat is unweighted, cites its drivers' sources, writes `Signposts:`; demands are tagged with seat ids; knowledge-backed seats summarise and never quote sensitive content verbatim; when every seat says "no demand" the last line is a warning, not a pass.
+- `cycle:plan`: gate 3 is narrowed to causes inside the plan; gate 4 runs the resolver, keeps lite mode's one question (now with seat ids, count and cost), dispatches the council, writes and commits the risks table, then dispatches the Mule; records `council:` and `joker:` in the plan's frontmatter. `templates/plan.md` gains those keys and a `## Signposts` section.
+- `cycle:maintain`: reads `## Signposts` of the plans shipped since the last review.
+- `docs/CONTRACT.md`, README (the "council of five" line, Configure), `README.pt-BR.md`.
+
+### Migration
+Repos without `.cycle/council.json` get the template's defaults; run `/cycle:init` again to seed the file (it never overwrites). `models.joker` missing = `sonnet`.
+
 ## [0.3.0] - 2026-09-12
 
 The ring gains a stage. An accepted intent says what hurts; nobody decides how to solve it before looking at how it has been solved. Research sits between intent and spec, and the devil's advocate opens on the research's weakest assumption. The owner's diagnosis behind it, from nine days of real use: "ele toma decisões sem saber tanto das coisas" — the method decided on 40-line tables written by the cheapest model, with one benchmark anchoring whole products.
@@ -101,7 +124,8 @@ Always-on context per session: **~1,816 tokens**, measured with `claude plugin d
 
 Portuguese prototype, local only. Plugin `ciclo`, bash hooks depending on `jq`, skills coupled to the author's own skill library and knowledge base. Never published.
 
-[Unreleased]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.2.0...v0.2.1

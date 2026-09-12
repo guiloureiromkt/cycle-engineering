@@ -8,6 +8,7 @@ Start the cycle in this repository. Do, don't ask, except where marked. Create O
 2. **`.cycle/`**, without overwriting anything that already exists:
    - `.cycle/config.json` ← copy of `<plugin root>/templates/config.json`
    - `.cycle/gate.json` ← copy of `<plugin root>/templates/gate.json`
+   - `.cycle/council.json` ← copy of `<plugin root>/templates/council.json` (the council's seats; never overwrite an existing one)
    - `.cycle/work/.gitkeep`
    - `.cycle/.gitignore` with two lines: `work/**/*.{png,jpg,mp4,zip,sql.gz}` and `release-approval`
    `.cycle/release-approval` is NOT created: a human creates it at deploy time.
@@ -17,4 +18,4 @@ Start the cycle in this repository. Do, don't ask, except where marked. Create O
 6. **Deploy commands.** If the repo has a deploy (workflow, script, Makefile, docs), list the commands found and check each against the gate's built-in defaults: `--prod`, `--target production`, `--env production`, `deploy … production`, `gh run rerun`, `gh workflow run`, `wrangler deploy`, `fly deploy`, `railway up`, and `git push` to a protected branch. For each command the defaults miss, propose the lowercase substring to add to `.cycle/gate.json` → `patterns`. **Ask before writing the patterns.**
 7. **Existing method.** If the repo already has a method (another plan folder, another framework), don't delete it: note in the block that both coexist and which is the source of truth for each artifact.
 8. **Do not** create `intent/`, `research/`, `specs/`, `plans/` or `evals/`, and do not copy templates into the repo: the skills create these folders on first use, reading templates from the plugin root.
-9. Finish with: what was created, what already existed, what is left for the human. Absolute paths in plain text.
+9. Finish with: what was created (config, gate, council seats, work dir, the CLAUDE.md block), what already existed, what is left for the human. Absolute paths in plain text.

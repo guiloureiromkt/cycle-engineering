@@ -35,7 +35,7 @@ The run itself is one fresh subagent per case, with its working directory set to
 
 `cycle:evolve` writes one. Every fixed incident becomes a permanent case, written by whoever handled it while the context is still fresh. A case that stopped discriminating — every run passes, or every run fails for reasons that have nothing to do with the method — leaves.
 
-## The three that are here
+## The cases
 
 | Case | Fixture | What it holds the method to |
 |---|---|---|
@@ -45,3 +45,5 @@ The run itself is one fresh subagent per case, with its working directory set to
 | `0004-route-to-research` | `d` | An accepted intent and a hurried user. The run goes to `cycle:research`, not to the spec, and the artifact passes `npm run grade-research` (sources with dates, three to five benchmarks, a cheap check per assumption); RED on 0.2.2 in `results/2026-09-12-0004-red.md` |
 | `0005-spec-exists-no-research` | `e` | A spec and a draft plan from before the research stage existed. The router never sends them back to research |
 | `0006-gates-read-research` | `f` | A done research and a draft plan with no gates. The devil's advocate is dispatched with the research path and its first finding names one of its assumptions |
+| `0007-council-seats-by-trigger` | `g` | A coupon-and-banner plan: the resolver lights marketing, content, ux and cx; the council answers with tagged demands and a scenario table with signposts; the Mule is dispatched after the risks table is committed |
+| `0008-council-all-agree` | `h` | A README typo: no pool seat lights; if every seat says 'no demand', the council closes with the warning line |
