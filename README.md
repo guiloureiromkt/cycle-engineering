@@ -2,11 +2,9 @@
 
 **Every framework stops at the PR. Cycle Engineering doesn't stop.**
 
-![demo](docs/demo.gif)
-
 *Em português: [README.pt-BR.md](README.pt-BR.md).*
 
-Cycle Engineering is a Claude Code plugin that runs the whole build cycle inside your repository: intent, spec, plan, build, test, deploy, maintain, and back to intent. Each stage leaves one committed Markdown file and triggers the next. Deterministic hooks stand between the agent and the actions that are expensive to undo.
+Cycle Engineering is a Claude Code plugin that runs the whole build cycle inside your repository: intent, research, spec, plan, build, test, deploy, maintain, and back to intent. Each stage leaves one committed Markdown file and triggers the next. Deterministic hooks stand between the agent and the actions that are expensive to undo.
 
 ## What changes
 
@@ -28,6 +26,8 @@ Opt out: delete `.cycle/` from the repository, in your own terminal. Without it,
 
 Without Node the gates are inactive, and the session start says so instead of failing silently.
 
+Open Claude Code **inside the repository**. The hooks read `.cycle/` from the directory the session started in, not from the repository a command touches. A session started in a parent folder or a notes vault that edits and deploys this repository runs with no gate at all (`intent/2026-09-04-portoes-presos-ao-diretorio-da-sessao.md` tracks the fix).
+
 ## Install
 
 ```bash
@@ -41,13 +41,16 @@ Then, inside a repository, run `/cycle:init`. It creates `.cycle/` (config, gate
 
 ![the loop](docs/loop.svg)
 
-## Seven stages
+## Eight stages
+
+An accepted intent says what hurts. Nobody decides how to solve it before looking at how it has been solved: that is why research sits between intent and spec, and why the devil's advocate opens on the research's weakest assumption.
 
 Each stage is a skill (`cycle:<stage>`). The table says what each one leaves in git and where a human signs.
 
 | Stage | What it commits | Human gate |
 |---|---|---|
 | `cycle:intent` | `intent/<name>.md`: the problem, who has it, what done looks like; sub-intents; a sweep of what already exists inside and outside the repo. | A named person accepts it (`status: accepted`, `accepted_by`). |
+| `cycle:research` | `research/<name>.md`: what we know (sourced, dated, typed by confidence), what the market does (three to five benchmarks, direct and indirect, used not read), what we assume, what we did not check, a recommendation for the spec. Depth by trigger: shallow for a bug, deep for a new product or money. | None. `status: done` is the precondition for the spec. The only skip is the router's shortcut, which also skips the spec. |
 | `cycle:spec` | `specs/<name>.md`: requirements that can be checked one by one; design references and a wireframe when there is a screen. | A named person approves it (`status: approved`, `approved_by`). |
 | `cycle:plan` | `plans/<name>.md`: numbered tasks, files, risks, and the record of five gates (task graph, devil's advocate, pre-mortem, council, loop). | Accepted after the gates (`status: accepted`). Nothing is coded before this. |
 | `cycle:build` | One commit per numbered task; intermediates in `.cycle/work/<intent>/`. A change to the plan lands in the same commit as the code. | None. The accepted plan is the authorization. |
@@ -70,14 +73,17 @@ Outside the ring sits `cycle:evolve`: it watches new models, skills and practice
     "advocate": "inherit",
     "council": "sonnet",
     "verifier": "sonnet",
-    "research": "haiku",
+    "sweeps": "haiku",
+    "research": "inherit",
     "critic": "inherit"
-  }
+  },
+  "knowledge": []
 }
 ```
 
 - `gates`: `lite` runs the devil's advocate on every plan and asks you, in one question, whether to call the council when a trigger lights (money, hours, permission, schema, destructive data, user surface, or more than 8 files). `full` runs both every time.
-- `models`: the model handed to each sub-agent when it is dispatched. Your main session keeps the model you chose; the plugin never changes it.
+- `models`: the model handed to each sub-agent when it is dispatched. `sweeps` is the cheap first pass inside `cycle:intent`; `research` is the stage-2 researcher (`inherit` by default: research is not where to save tokens). Your main session keeps the model you chose; the plugin never changes it.
+- `knowledge`: your own sources for the research stage, `{name, kind: notebooklm | vault | folder | url, id, areas: []}`. Empty by default; the stage works without it.
 - `stateful`: set `true` when the repo owns a database or user files. Production deploy then requires a restore test newer than 30 days (`.cycle/work/<intent>/restore-test.md`).
 - `protected_branches`: a `git push` to any of these counts as a production deploy.
 

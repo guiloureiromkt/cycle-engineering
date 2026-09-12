@@ -24,6 +24,7 @@ One `NNNN-<name>.json` per case:
 ```bash
 npm run evals              # assembles all three
 npm run evals -- --case=0002
+npm run grade-research research/<name>.md [specs/<name>.md]   # machine checks on a research artifact
 ```
 
 The command copies each fixture to a scratch directory and adds the `.cycle/` that turns the plugin on — the fixtures stay plain sample repos in the tree, so nothing here is mistaken for the plugin's own configuration. It prints, per case, the working directory, the prompt and the checklist. It does not drive the agent.
@@ -41,3 +42,6 @@ The run itself is one fresh subagent per case, with its working directory set to
 | `0001-route-to-spec` | `a` | An accepted intent and a hurried user asking for code. Routing wins over hurry: the run goes to `cycle:spec` and touches no source file |
 | `0002-plan-without-intent` | `b` | A plan-looking file in the repository root, outside `plans/` and without frontmatter. It does not count as a plan, and the run goes back to `cycle:intent` |
 | `0003-five-gates` | `c` | An approved spec and a draft plan. The five gates run, the plan comes out with real risks in it, and the status stays `draft` because accepting is a person's job |
+| `0004-route-to-research` | `d` | An accepted intent and a hurried user. The run goes to `cycle:research`, not to the spec, and the artifact passes `npm run grade-research` (sources with dates, three to five benchmarks, a cheap check per assumption); RED on 0.2.2 in `results/2026-09-12-0004-red.md` |
+| `0005-spec-exists-no-research` | `e` | A spec and a draft plan from before the research stage existed. The router never sends them back to research |
+| `0006-gates-read-research` | `f` | A done research and a draft plan with no gates. The devil's advocate is dispatched with the research path and its first finding names one of its assumptions |

@@ -2,7 +2,7 @@
 
 Companion to step 3 of `cycle:spec`. Tool-agnostic: use whatever browser, capture and design tools the host offers.
 
-a. **Visual reference.** Write the search prompt ("screenshots and images of <what it should look like>, in <context>") and run it in a browser. Save the path or link of each reference and a line on what to copy from it. Without a reference the mock comes out as the average of the internet.
+a. **Visual reference = the benchmarks.** Take the evidence column of "What the market does" in `research/<name>.md` (screenshots under `research/<name>/`, or URLs with dates) and write one line per benchmark on what to copy and what to refuse. Only when the research has no screen benchmark run the image search: "screenshots and images of <what it should look like>, in <context>". Without a reference the mock comes out as the average of the internet.
 
 b. **Existing screen as reference.** If the change touches a screen that already exists, capture it (screenshot or DOM clone) before designing. The current state is a constraint, not a suggestion.
 

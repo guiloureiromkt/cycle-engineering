@@ -40,6 +40,12 @@ for (const c of cases) {
   cpSync(configTemplate, join(dest, '.cycle', 'config.json'));
   writeFileSync(join(dest, '.cycle', 'gate.json'), readFileSync(join(root, 'templates', 'gate.json')));
 
+  // A user repo carries the block /cycle:init writes; a subagent in a scratch dir gets no SessionStart,
+  // so the block is the only thing that tells it to route. Same text as templates/claude-md-block.md.
+  const block = readFileSync(join(root, 'templates', 'claude-md-block.md'), 'utf8');
+  const claudeMd = join(dest, 'CLAUDE.md');
+  writeFileSync(claudeMd, (existsSync(claudeMd) ? readFileSync(claudeMd, 'utf8') + '\n' : '') + block);
+
   console.log(`\n${'='.repeat(72)}\n${c.id}`);
   console.log(`origin   ${c.origin}`);
   console.log(`cwd      ${dest}`);

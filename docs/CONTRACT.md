@@ -3,7 +3,7 @@
 Marketplace: `cycle-engineering` (repo name). Plugin: `cycle`. Install: `claude plugin marketplace add guiloureiromkt/cycle-engineering` then `claude plugin install cycle@cycle-engineering`. Local during build: `claude plugin marketplace add <path to this working copy>`.
 
 ## Names
-- Skills (own, 9): `cycle:using-cycle`, `cycle:intent`, `cycle:spec`, `cycle:plan`, `cycle:build`, `cycle:test`, `cycle:deploy`, `cycle:maintain`, `cycle:evolve`.
+- Skills (own, 10): `cycle:using-cycle`, `cycle:intent`, `cycle:research`, `cycle:spec`, `cycle:plan`, `cycle:build`, `cycle:test`, `cycle:deploy`, `cycle:maintain`, `cycle:evolve`.
 - Skills (bundled copies from obra/superpowers, MIT, 8): `cycle:brainstorming`, `cycle:writing-plans`, `cycle:executing-plans`, `cycle:subagent-driven-development`, `cycle:tdd`, `cycle:verify-before-done`, `cycle:parallel-agents`, `cycle:worktrees`.
 - Skills (bundled, other): `cycle:gauntlet` (Shumer/robonuggets, CC BY 4.0).
 - Skills (own, rewritten in English, 3): `cycle:verification-gate`, `cycle:task-graph`, `cycle:adoption-filter`.
@@ -11,13 +11,14 @@ Marketplace: `cycle-engineering` (repo name). Plugin: `cycle`. Install: `claude 
 - Any `cycle:<name>` referenced anywhere must exist as `skills/<name>/SKILL.md` (`tests/refs.test.mjs` enforces). Bundle it or rewrite the line.
 
 ## Files in a user repo
-`intent/`, `specs/`, `plans/`, `evals/`, `.cycle/` (`config.json`, `gate.json`, `release-approval`, `work/<intent>/`, `work/.stop-warned`).
+`intent/`, `research/`, `specs/`, `plans/`, `evals/`, `.cycle/` (`config.json`, `gate.json`, `release-approval`, `work/<intent>/`, `work/.stop-warned`).
+`research/<name>.md` is committed next to `specs/` and `plans/`, not under `.cycle/work/`, because it authorizes the spec (the same reason the intent is committed). Its evidence (screenshots) lives under `research/<name>/`.
 `/cycle:init` creates ONLY `.cycle/` (config.json, gate.json, work/.gitkeep, .gitignore) and the CLAUDE.md block. It never copies templates. Skills read templates from the plugin root printed by the session hook (`plugin root: <path>`).
 CLAUDE.md block lives between `<!-- cycle:start -->` and `<!-- cycle:end -->`; init and uninstall operate only inside the markers.
 
 ## Frontmatter
-Keys: `type`, `status`, `author`, `date`, `origin`, `intent`, `spec`, `accepted_by`, `approved_by`, `gates`.
-Statuses: intent `draft|accepted|closed` · spec `draft|approved` · plan `draft|accepted`.
+Keys: `type`, `status`, `author`, `date`, `origin`, `intent`, `research`, `spec`, `depth`, `accepted_by`, `approved_by`, `gates`.
+Statuses: intent `draft|accepted|closed` · research `draft|done` · spec `draft|approved` · plan `draft|accepted`.
 
 ## Magic strings
 - Commit message containing `plan: unchanged` or `[plan-ok]` satisfies plan-sync.
@@ -28,10 +29,12 @@ Statuses: intent `draft|accepted|closed` · spec `draft|approved` · plan `draft
 ## Config (`.cycle/config.json`)
 ```json
 { "gates": "lite", "stateful": false, "protected_branches": ["main"],
-  "models": { "advocate": "inherit", "council": "sonnet", "verifier": "sonnet", "research": "haiku", "critic": "inherit" } }
+  "models": { "advocate": "inherit", "council": "sonnet", "verifier": "sonnet", "sweeps": "haiku", "research": "inherit", "critic": "inherit" },
+  "knowledge": [] }
 ```
 - `gates`: `lite` (default) = devil's advocate always; council SUGGESTED to the user in one question when a trigger lights (money, hours, permission, schema, destructive data, user surface, or more than 8 files change), otherwise skipped and recorded as skipped in the plan. `full` = advocate and council always.
-- `models`: passed as the `model` argument when dispatching agents. The main session's model is the user's choice; the plugin never changes it.
+- `models`: passed as the `model` argument when dispatching agents. `sweeps` is the cheap pass-1 of `cycle:intent`; `research` is the stage-2 researcher. Missing `models.sweeps` = `haiku`; missing `models.research` = `inherit`.
+- `knowledge`: list of `{name, kind: notebooklm | vault | folder | url, id, areas: []}` the research stage queries when `areas` match the intent. Missing key = empty list. The main session's model is the user's choice; the plugin never changes it.
 - `stateful: true` makes production deploy require a restore test newer than 30 days (`.cycle/work/<intent>/restore-test.md`).
 - `.cycle/gate.json`: `{ "patterns": [] }` — repo-specific deploy commands, lowercase substring match.
 

@@ -4,9 +4,11 @@ description: Where this repository is in the cycle (intent → spec → plan →
 
 Read the state of the cycle in this repository and answer in at most 12 lines:
 
-1. List `intent/*.md`, `specs/*.md` and `plans/*.md` with each one's `status` (frontmatter). If `.cycle/` does not exist, say the repo has not been started on the cycle and point to `/cycle:init`.
-2. For each intent, say which stage it is in: no spec → Spec; spec without plan → Plan; draft plan → gates pending; accepted plan → Build; build done without pasted proof → Test; PR open → Deploy.
-3. Say which cycle skill runs next for each one (`cycle:intent`, `cycle:spec`, `cycle:plan`, `cycle:build`, `cycle:test`, `cycle:deploy`, `cycle:maintain`).
+1. List `intent/*.md`, `research/*.md`, `specs/*.md` and `plans/*.md` with each one's `status` (frontmatter). If `.cycle/` does not exist, say the repo has not been started on the cycle and point to `/cycle:init`.
+2. For each intent, say which stage it is in: accepted, no spec and no research done → Research; research done, no spec → Spec; spec without plan → Plan; draft plan → gates pending; accepted plan → Build; build done without pasted proof → Test; PR open → Deploy.
+3. Say which cycle skill runs next for each one (`cycle:intent`, `cycle:research`, `cycle:spec`, `cycle:plan`, `cycle:build`, `cycle:test`, `cycle:deploy`, `cycle:maintain`).
 4. If `.cycle/release-approval` exists, show its content and date; otherwise say production deploy is blocked by the gate. Show `gates` and `stateful` from `.cycle/config.json`.
+
+5. Print one counter line: "specs without a research artifact: N of M" (a spec whose frontmatter `research:` does not point at a `research/*.md` with `status: done`, or has no `research:` key). Specs dated before the plugin's 0.3.0 are counted but marked "(pre-0.3.0)".
 
 Edit nothing. If the user passed an argument ($ARGUMENTS), filter by the intent with that name.

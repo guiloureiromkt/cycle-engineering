@@ -1,7 +1,8 @@
 <!-- cycle:start -->
 ## Cycle (plugin `cycle` · Cycle Engineering)
-This repo runs the cycle: intent → spec → plan → build → test → deploy → maintain (→ evolve). Before editing code, invoke `cycle:using-cycle` with the Skill tool.
-- Artifacts: `intent/` · `specs/` · `plans/` · `evals/` · `.cycle/`.
+This repo runs the cycle: intent → research → spec → plan → build → test → deploy → maintain (→ evolve). Before editing code, invoke `cycle:using-cycle` with the Skill tool.
+- Artifacts: `intent/` · `research/` · `specs/` · `plans/` · `evals/` · `.cycle/`.
+- Start the session in this repository. The gates read `.cycle/` from the session's start directory; a session started elsewhere runs here with no gate.
 - Rule 1 · No code edit without `plans/<x>.md` with `status: accepted` and `accepted_by`.
 - Rule 2 · Departed from the plan: update `plans/<x>.md` in the same commit, or write `plan: unchanged` in the message, only when it is true.
 - Rule 3 · Commit after every numbered task of the plan. Intermediate files go in `.cycle/work/<intent>/`.

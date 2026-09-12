@@ -90,6 +90,13 @@ test("session-start with .cycle/: state with 'accepted plans: none' and the rout
   assert.match(ctx, /plugin root: \/plugin\/root/);
 });
 
+test("session-start with .cycle/: counts research/ files", () => {
+  const d = repo();
+  write(d, "research/x.md", "---\ntype: research\nstatus: done\n---\n# r\n");
+  const ctx = JSON.parse(runHook("session-start.mjs", {}, d).stdout).hookSpecificOutput.additionalContext;
+  assert.match(ctx, /intents=0 · research=1 · specs=0/);
+});
+
 // ───────────── production-gate ─────────────
 test("gate: `npm test` → 0", () => assert.equal(gate("npm test", repo()), 0));
 test("gate: `vercel --prod` → 2 with the gate message", () => {

@@ -11,14 +11,14 @@ Nothing is implemented without an accepted plan. Written in plan mode, it passes
 An accepted `intent/<x>.md` and an approved `specs/<x>.md` exist and the frontmatter points to them; otherwise the plan is a draft by definition: back to `cycle:intent` or `cycle:spec`, even if the user says "I reviewed it, it's great".
 
 ## Models
-Read `.cycle/config.json` → `models`; pass it as the `model` argument when dispatching the advocate, council, verifier, gauntlet critic and research subagents (defaults: advocate `inherit`, council `sonnet`, verifier `sonnet`, research `haiku`, critic `inherit`). The main session's model is the user's choice.
+Read `.cycle/config.json` → `models`; pass it as the `model` argument when dispatching the advocate, council, verifier, gauntlet critic and research subagents (defaults: advocate `inherit`, council `sonnet`, verifier `sonnet`, sweeps `haiku`, research `inherit`, critic `inherit`). The main session's model is the user's choice.
 
 ## Steps
-1. **Plan mode.** REQUIRED SUB-SKILL: `cycle:writing-plans`. Ask what breaks, which step is riskiest, what you discarded. Iterate until an engineer who never saw this conversation could implement from it.
+1. **Plan mode.** REQUIRED SUB-SKILL: `cycle:writing-plans`. Ask what breaks, which step is riskiest, what you discarded. Iterate until an engineer who never saw this conversation could implement from it. Technical unknowns (a library to pick, an API limit to confirm) go to a "Technical unknowns" section appended to `research/<name>.md` — decision · justification · alternatives — never a second research file.
 2. **Gate 1 · Graph.** Shape of the work (what splits, what is sequential, separate verifier, human gate). REQUIRED SUB-SKILL: `cycle:task-graph`.
-3. **Gate 2 · Devil's advocate.** Agent `devils-advocate`, fresh context, always.
+3. **Gate 2 · Devil's advocate.** Agent `devils-advocate`, fresh context, always. The request carries four paths: the plan, the spec, the intent and `research/<name>.md`.
 4. **Gate 3 · Pre-mortem.** "Six months later, this failed. Why?" Severity (🔴 🟠 🟡) + a cheap test before building.
-5. **Gate 4 · Council.** Agent `council`: five voices, one demand each. `gates` in `.cycle/config.json`: `full` always; `lite` (default) only when a trigger lights (money, hours, permission, schema, destructive data, user surface, more than 8 files). Then ask the user ONE question: run the council? Record the answer in the plan; if skipped, `council: skipped` under `gates`.
+5. **Gate 4 · Council.** Agent `council`, same four paths: five voices, one demand each. `gates` in `.cycle/config.json`: `full` always; `lite` (default) only when a trigger lights (money, hours, permission, schema, destructive data, user surface, more than 8 files). Then ask the user ONE question: run the council? Record the answer in the plan; if skipped, `council: skipped` under `gates`.
 6. **Gate 5 · Loop.** The bar for "done", verifiable by number or blind comparison; gauntlet yes or no (`cycle:gauntlet`).
 7. **Risks is never "none"** when money, hours, permission, schema, destructive data or a screen is touched.
 8. **Acceptance.** A human writes `status: accepted` and `accepted_by`. Commit. Next: `cycle:build`.

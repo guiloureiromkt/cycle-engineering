@@ -8,11 +8,13 @@ SDLC é a sigla em inglês pra "ciclo de vida do desenvolvimento de software": o
 
 Com um agente como o Claude Code, escrever código deixou de ser o gargalo. Ele produz em minutos o que levava dias. O problema mudou de lugar. Agora o que falta é saber o que pedir, conferir se o que saiu é o que se pediu, e não deixar o agente publicar em produção o que ninguém revisou. Cycle Engineering é um plugin de Claude Code que coloca esse caminho inteiro dentro do seu repositório, em arquivos Markdown que ficam no git, e trava com hooks (scripts que rodam antes de uma ação do agente) os passos que são caros de desfazer. Você continua decidindo. O agente para de decidir sozinho.
 
-O que você recebe: nove skills (uma por etapa, mais o roteador), três agentes revisores, três comandos e cinco hooks. O que não vem: deploy automático, CI, integração com GitHub Actions. Ele organiza e trava. Quem publica continua sendo você.
+O que você recebe: dez skills (uma por etapa, mais o roteador), três agentes revisores, três comandos e cinco hooks. O que não vem: deploy automático, CI, integração com GitHub Actions. Ele organiza e trava. Quem publica continua sendo você.
 
 ## Primeiro ciclo em 30 minutos
 
 Você precisa do Claude Code instalado e do Node.js 18 ou mais novo (os hooks rodam em Node). Sem o Node, os portões ficam desligados e o início da sessão avisa.
+
+**Abra o Claude Code dentro do repositório.** Os hooks leem a pasta `.cycle/` do diretório onde a sessão começou, não do repositório que o comando toca. Sessão aberta numa pasta acima, ou no seu vault de notas, que edita e publica este repositório roda sem portão nenhum. Foi assim que o autor rodou um ciclo inteiro, com deploy em produção, sem um hook sequer disparar.
 
 Escolha um repositório seu e um pedido pequeno de verdade: um botão, uma validação, um texto que muda. Não estreie com o pedido grande.
 
@@ -47,7 +49,15 @@ cycle:intent
 
 A skill faz perguntas curtas, em rodadas: o que quebra hoje, pra quem, como você vai saber que resolveu. Ela também varre o repositório e a internet pra ver o que já existe antes de inventar. No fim, grava `intent/<nome>.md`. Você lê e aceita, com seu nome no arquivo (`status: accepted`, `accepted_by`). Sem esse aceite, nada avança.
 
-### 4. Spec curta
+### 4. Pesquisar antes de especificar
+
+```
+cycle:research
+```
+
+Ela olha o que já existe dentro do repositório e fora dele, traz três a cinco referências de mercado com o que cada uma faz e uma evidência datada, separa fato de suposição, e termina com uma recomendação de cinco linhas. Fica em `research/<nome>.md`, ao lado do intent. Só o atalho de mudança pequena pula essa etapa, e ele pula a spec junto.
+
+### 5. Spec curta
 
 ```
 cycle:spec
@@ -57,7 +67,7 @@ A spec transforma o intent em requisitos que dá pra conferir um por um. Se tive
 
 Pra um pedido pequeno, a spec tem meia página. Está certo assim.
 
-### 5. Plano com portões, em modo lite
+### 6. Plano com portões, em modo lite
 
 ```
 cycle:plan
@@ -67,7 +77,7 @@ O plano lista as tarefas numeradas, os arquivos que mudam e os riscos. Antes de 
 
 Você aceita o plano (`status: accepted`). Só então o agente pode editar código.
 
-### 6. Build e teste
+### 7. Build e teste
 
 Chame `cycle:build`. Cada tarefa do plano vira um commit. Depois, `cycle:test`: a saída dos testes aparece colada, não descrita, e um verificador em contexto novo roda o que foi construído antes de alguém dizer "pronto".
 

@@ -18,17 +18,17 @@ Map the request as a **decision tree**: each decision opens the ones that depend
 ## Step 2 · Sub-intents
 Tree closed, ask: what orbits this request and cannot be forgotten once it exists? Who else is affected? What breaks if this changes? Each answer is a line under "Sub-intents", with its why. A sub-intent is a product front, not a task.
 
-## Step 3 · Two sweeps, in parallel
-Dispatch two subagents at once (REQUIRED SUB-SKILL: `cycle:parallel-agents`), `model` = `models.research` from `.cycle/config.json` (default `haiku`); the main session's model is the user's choice.
+## Step 3 · Two sweeps, in parallel (research pass 1)
+Dispatch two subagents at once (REQUIRED SUB-SKILL: `cycle:parallel-agents`), `model` = `models.sweeps` from `.cycle/config.json` (missing key = `haiku`); the main session's model is the user's choice.
 - **Inside:** if you have a knowledge base or vault, search it; otherwise search the repo, its git log, installed skills and project memory. What already solves part of this?
 - **Outside:** repos, public skills, practices, benchmarks.
-Each finding enters the "What already exists" table with a verdict **use · adapt · discard**. An external skill gets "use" only after `cycle:adoption-filter`.
+Each finding enters the "What already exists" table with a verdict **use · adapt · discard**. An external skill gets "use" only after `cycle:adoption-filter`. This is pass 1. `cycle:research` runs after acceptance and goes deeper by trigger; do not do its work here.
 
 ## Step 4 · Approaches
 Propose 2 or 3 paths with trade-offs, recommendation first. Still intent, not spec: the chosen path goes under "Proposed outcome" in product language.
 
 ## Step 5 · Write, correct, accept
-Template: `<plugin root>/templates/intent.md` (the session hook prints the root). Show the originator; they correct what you misread. Only then `status: accepted`, commit, next: `cycle:spec`. The repo's product owner accepts, not the writer.
+Template: `<plugin root>/templates/intent.md` (the session hook prints the root). Show the originator; they correct what you misread. Only then `status: accepted`, commit, next: `cycle:research`. The repo's product owner accepts, not the writer.
 
 ## Backlog, "no questions", common mistakes
 Details in `references/interview.md`. In short: `/cycle:triage` labels draft intents; "no questions" means one round of three questions and a draft, not acceptance; never ask a fact, never skip the sweep, never write "use localStorage" in an intent.

@@ -6,7 +6,9 @@
     "advocate": "inherit",
     "council": "sonnet",
     "verifier": "sonnet",
-    "research": "haiku",
+    "sweeps": "haiku",
+    "research": "inherit",
     "critic": "inherit"
-  }
+  },
+  "knowledge": []
 }

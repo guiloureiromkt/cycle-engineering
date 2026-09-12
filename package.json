@@ -3,9 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/hooks.test.mjs tests/refs.test.mjs",
+    "test": "node --test tests/hooks.test.mjs tests/refs.test.mjs tests/grader.test.mjs",
     "install-fresh": "bash tests/install-fresh.sh",
-    "evals": "node evals/run.mjs"
+    "evals": "node evals/run.mjs",
+    "grade-research": "node evals/grade-research.mjs"
   },
   "engines": {
     "node": ">=18"

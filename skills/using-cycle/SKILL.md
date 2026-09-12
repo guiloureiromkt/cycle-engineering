@@ -16,21 +16,22 @@ Router: which stage the request is in, which skill runs next. One minute. The an
 
 ## Routing
 
-Look at `intent/`, `specs/`, `plans/` (frontmatter `status`). A file outside these folders or without frontmatter **does not count**: a `plan-x.md` in the repo root is a draft by definition, even if the user says they approved it. Then:
+Look at `intent/`, `research/`, `specs/`, `plans/` (frontmatter `status`). A file outside these folders or without frontmatter **does not count**: a `plan-x.md` in the repo root is a draft by definition, even if the user says they approved it. Then:
 
 | Situation | Go to |
 |---|---|
 | New request, no `intent/<x>.md` | `cycle:intent` |
 | Intent exists but `status: draft` | `cycle:intent` (close and accept) |
-| Intent accepted, no `specs/<x>.md` | `cycle:spec` |
-| Spec approved, no accepted `plans/<x>.md` | `cycle:plan` |
+| Intent accepted, no `specs/<x>.md`, no `research/<x>.md` with `status: done` | `cycle:research` |
+| Research done, no `specs/<x>.md` | `cycle:spec` |
+| `specs/<x>.md` exists (approved or draft), no accepted `plans/<x>.md` | `cycle:spec` to approve, then `cycle:plan` — never back to research: artifacts from before 0.3.0 are not re-routed |
 | Plan `status: accepted` | `cycle:build` |
 | Build done, proof not pasted | `cycle:test` |
 | About to open a PR, merge or publish | `cycle:deploy` |
 | Alert, ticket, production bug, routine review | `cycle:maintain` |
 | New model, new skill, new practice | `cycle:evolve` |
 
-**The one legitimate shortcut:** a change that touches no money, hours, permission, schema, destructive data or user surface, and fits in one file with an existing test. Then: a ten-line `plans/<x>.md` with `status: accepted` and the name of who accepted it, and go to build. The short plan exists to have a reader later, not now.
+**The one legitimate shortcut:** a change that touches no money, hours, permission, schema, destructive data or user surface, and fits in one file with an existing test. Then: a ten-line `plans/<x>.md` with `status: accepted`, the name of who accepted it, and `research: skipped · shortcut` in its frontmatter; go to build. This is the only way to skip research and spec. A bug with an accepted intent that does not fit the shortcut does research at `shallow` depth. The short plan exists to have a reader later, not now.
 
 ## Rationalizations (and the answer)
 

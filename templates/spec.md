@@ -2,6 +2,7 @@
 type: spec
 status: draft            # draft → approved
 intent: intent/<file>.md
+research: research/<file>.md
 date: <YYYY-MM-DD>
 approved_by: <name · date>
 ---

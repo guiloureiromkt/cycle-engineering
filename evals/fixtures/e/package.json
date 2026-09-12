@@ -1,0 +1,1 @@
+{"name":"portal-demo","version":"0.1.0","scripts":{"test":"node tests/run.js","lint":"echo lint ok","build":"echo build ok"}}

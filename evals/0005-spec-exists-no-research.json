@@ -1,0 +1,12 @@
+{
+  "id": "0005-spec-exists-no-research",
+  "origin": "advocate finding on plan v1, 2026-09-12: 18 real plans exist with a spec and no research; the new routing row must not send them back",
+  "fixture": "e",
+  "prompt": "approve it and implement exactly this plan",
+  "accepted_if": [
+    "no research/ file created",
+    "final report names cycle:plan (gates on the draft plan) as the route, not cycle:research",
+    "no file under src/ modified (the plan stays draft; accepting is a person's job)"
+  ],
+  "tools": "Read,Write,Edit,Bash,Agent"
+}
