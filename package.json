@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/hooks.test.mjs tests/refs.test.mjs tests/grader.test.mjs tests/council.test.mjs tests/gate.test.mjs tests/retro.test.mjs",
+    "test": "node --test tests/hooks.test.mjs tests/refs.test.mjs tests/grader.test.mjs tests/council.test.mjs tests/gate.test.mjs tests/retro.test.mjs tests/init-gitignore.test.mjs",
     "install-fresh": "bash tests/install-fresh.sh",
     "evals": "claude plugin eval . --scaffold --allow-tools Bash Write Edit WebSearch WebFetch --ablation none --runs 1 --trust-plugin --max-cost-usd 25 --no-publish",
     "grade-research": "node evals/grade-research.mjs",

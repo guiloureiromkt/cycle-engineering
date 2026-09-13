@@ -1,0 +1,11 @@
+# cycle-engineering · .cycle/.gitignore (copied by /cycle:init)
+# One pattern per line. gitignore does NOT expand brace lists, so each extension gets its own line.
+work/**/*.png
+work/**/*.jpg
+work/**/*.jpeg
+work/**/*.gif
+work/**/*.mp4
+work/**/*.zip
+work/**/*.sql.gz
+work/**/*.dump
+release-approval

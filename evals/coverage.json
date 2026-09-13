@@ -163,6 +163,9 @@
     "0007-council-seats-by-trigger",
     "0008-council-all-agree"
   ],
+  "templates/cycle-gitignore": {
+    "tests": "tests/init-gitignore.test.mjs"
+  },
   "templates/eval-example/case.yaml": {
     "uncovered": "documentation of the case format; a user copies it",
     "since": "2026-09-13"

@@ -12,7 +12,9 @@ The first thing the routine does is check that `.cycle/` exists in the working d
 
 ## What it may use
 
-Allowed: `Read`, `Grep`, `Glob`, `Bash` limited to `git status`, `git log`, `git diff`, `git switch -c`, `git add`, `git commit`, `npm test`, `npm run gate`, `node scripts/retro.mjs`, and `Write`/`Edit` inside `intent/`, `docs/`, `.cycle/work/` and `CLAUDE.md`.
+Allowed: `Read`, `Grep`, `Glob`, `Bash` limited to `git status`, `git log`, `git diff`, `git show <ref>:<path>` (read-only; the way back when the run has overwritten a committed file), `git switch -c`, `git switch <branch>` (to return to the default branch once a proposal is committed), `git add`, `git commit`, `npm test`, `npm run gate`, `node scripts/retro.mjs`, and `Write`/`Edit` inside `intent/`, `docs/`, `.cycle/work/` and `CLAUDE.md`.
+
+Documents go through `Write`/`Edit`, never through a Bash heredoc. The release gate reads the whole command string, prose included: on 13/09 it refused an intent because one line of its text named the gate's file and a deploy. A heredoc that trips the gate teaches the run to route around it, which is worse than the lost tool call.
 
 Forbidden, and the reason each one is:
 
@@ -36,7 +38,7 @@ The routine proposes. It opens a branch for a docs-only fix and leaves it unmerg
 
 ## What it writes
 
-- `.cycle/work/evolve/<date>.md`: what appeared, what the retros say, the repeats, the triage table ordered for the owner, the uncovered-file count and its delta, and the list of "wanted to change, could not".
+- `.cycle/work/evolve/<date>.md` (or `<date>-2.md` for a second run on the same date): what appeared, what the retros say, the repeats, the triage table ordered for the owner, the uncovered-file count and its delta, and the list of "wanted to change, could not".
 - Branches for docs-only fixes, unmerged.
 - New `intent/` files for everything else.
 - One line in `evals/results/cost-log.md` **if** it ran a full eval.
@@ -44,6 +46,8 @@ The routine proposes. It opens a branch for a docs-only fix and leaves it unmerg
 ## The "did not complete" artifact
 
 A routine that dies silently is worse than no routine: the week looks healthy because nothing complained. So the run writes `.cycle/work/evolve/<date>.md` **first**, with `status: did not complete` and the reason it has so far (usually "started"), and rewrites it at the end with the real report. If the run dies anywhere in between, the file survives saying it did not finish. The next run reads that and says so in its own report.
+
+**A second run on the same date does not overwrite the first.** Before writing the stub, the run checks whether `.cycle/work/evolve/<date>.md` already exists. If it does and is not this run's own stub, the run writes `<date>-2.md` (then `-3.md`, and so on) and names the earlier file in its own frontmatter (`run: 2`, `previous_run: <date>`). The 13/09 second run wrote its stub over the first run's committed report before reading it; the report came back from `git show HEAD:…`, but a run that dies at that point leaves the week's real report replaced by a stop notice, which is the exact failure this artifact exists to prevent.
 
 ## The cost rule
 

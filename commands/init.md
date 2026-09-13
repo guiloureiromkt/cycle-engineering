@@ -10,7 +10,7 @@ Start the cycle in this repository. Do, don't ask, except where marked. Create O
    - `.cycle/gate.json` ← copy of `<plugin root>/templates/gate.json`
    - `.cycle/council.json` ← copy of `<plugin root>/templates/council.json` (the council's seats; never overwrite an existing one)
    - `.cycle/work/.gitkeep`
-   - `.cycle/.gitignore` with two lines: `work/**/*.{png,jpg,mp4,zip,sql.gz}` and `release-approval`
+   - `.cycle/.gitignore` ← copy of `<plugin root>/templates/cycle-gitignore` (one pattern per line: gitignore does not expand brace lists)
    `.cycle/release-approval` is NOT created: a human creates it at deploy time.
 3. **`CLAUDE.md` block.** Take `<plugin root>/templates/claude-md-block.md` (it already carries the `<!-- cycle:start -->` and `<!-- cycle:end -->` markers). If `CLAUDE.md` exists and contains both markers, replace everything from the start marker to the end marker, inclusive, with the template. If it exists without the markers, append the template at the end. If it does not exist, create `CLAUDE.md` with the block only and tell the user to run `/init` and cut the result to one page. Never touch anything outside the markers.
 4. **Real commands.** Find the repo's actual test, lint, build and rollback commands (package.json, Makefile, pyproject, workflows) and fill them into the block's "Commands" line. If one does not exist, write "none" instead of inventing.

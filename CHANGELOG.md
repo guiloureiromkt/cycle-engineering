@@ -4,6 +4,18 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-09-13
+
+A fix that waited nine days in a branch, and the weekly routine's own first lesson. No skill changed, so nothing new is owed to the ablation.
+
+### Fixed
+- **`/cycle:init` wrote a `.gitignore` that ignored nothing.** It spelled `work/**/*.{png,jpg,mp4,zip,sql.gz}`, and **gitignore does not expand brace lists** — so screenshots under `.cycle/work/` showed up as untracked in a product repo, which is how it was found on 04/09. The init now copies `templates/cycle-gitignore`, one pattern per line, and `tests/init-gitignore.test.mjs` proves both sides with `git check-ignore` itself, keeping the old brace form as the RED baseline.
+
+### Changed
+- **The weekly routine does not overwrite its own report.** Its first two runs happened on the same day, and the second wrote the "did not complete" stub over the first's committed 133-line report before reading it. Restored from `git show`, byte-identical — but a run that died in between would have replaced the week's record with a stop notice. A second run on a date now writes `<date>-2.md` and names the earlier one. Documents go through `Write`, never a Bash heredoc: the release gate reads the whole command string, prose included, and refused an intent whose *text* named the gate's file and a deploy.
+- `docs/routines/weekly-evolve.md` grants `git show <ref>:<path>` and `git switch <branch>`, each with the reason it exists — both were used by the run that needed them and disclosed rather than hidden.
+- `CLAUDE.md` gains the line the retro earned: **a cycle is closed when its `retro.md` exists, not when the version is tagged.** Three releases shipped without one, the last of them the release that wrote the rule.
+
 ## [0.6.0] - 2026-09-13
 
 0.5.0 built the measuring stick. This is the half that uses it: a cycle that closes writes a retro about itself from git, `cycle:evolve` gets four triggers instead of a wish, and a weekly routine reads what the retros say and proposes — without being able to merge anything.
@@ -190,7 +202,8 @@ Always-on context per session: **~1,816 tokens**, measured with `claude plugin d
 
 Portuguese prototype, local only. Plugin `ciclo`, bash hooks depending on `jq`, skills coupled to the author's own skill library and knowledge base. Never published.
 
-[Unreleased]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.3.0...v0.4.0
