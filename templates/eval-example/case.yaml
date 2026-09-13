@@ -1,0 +1,29 @@
+schema_version: "1.1"
+name: 0001-<short-name>
+description: one line: the situation this case puts the method in
+runs: 1
+context:
+  scaffold_script: scaffold.sh      # a file in this directory; runs only under --scaffold
+execution:
+  prompt: "the task, in the words it was really asked"
+  allowed_tools: [Read, Write, Edit, Bash, Glob, Grep, Skill]
+  max_turns: 25
+  timeout_seconds: 900
+graders:
+  - type: tool_used
+    name: the-router-fired
+    arm: with-only
+    tool: Skill
+    input_match: "cycle:using-cycle"
+  - type: file_exists
+    name: created-nothing-under-src
+    path: "src/**"
+    exists: false
+  - type: llm
+    name: what-must-be-true
+    focus:
+      source: file
+      path: "specs/<name>.md"
+    criteria: |
+      PASS only if …
+      FAIL if …

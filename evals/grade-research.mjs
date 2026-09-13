@@ -17,16 +17,19 @@ for (const h of ['What we know', 'What the market does', 'What we assume', 'What
 
 const section = (h) => md.split(new RegExp(`^## ${h}[^\n]*\n`, 'm'))[1]?.split(/^## /m)[0] ?? '';
 const rows = (s) => s.split('\n').filter(l => /^\|/.test(l) && !/^\|\s*-/.test(l) && !/^\|\s*(Finding|Product)/.test(l));
+// What counts as evidence in both tables: a URL, a path, a filename, or a command run on this machine.
+// `claude …` is here for the same reason `git log` is: a CLI invocation, named and dated, is a source.
+const EVIDENCE = /(https?:\/\/|[\w.-]+\/[\w.-]+|\b[\w-]+\.(md|js|mjs|ts|json|py|txt|ya?ml|toml|lock|sh)\b|`(git|grep|ls|npm|node|cat|find|claude)\b[^`]*`)/;
 const cells = (r) => r.split(/(?<!\\)\|/);  // an escaped pipe (\|) inside a cell is not a column separator
 const know = rows(section('What we know'));
 ok('what we know: at least 1 row', know.length >= 1);
-ok('what we know: every row has a source with URL or path AND a date', know.every(r => { const c = cells(r)[2] ?? ''; return /(https?:\/\/|[\w.-]+\/[\w.-]+|\b[\w-]+\.(md|js|mjs|ts|json|py|txt|ya?ml|toml|lock|sh)\b|`(git|grep|ls|npm|node|cat|find)\b[^`]*`)/.test(c) && /\d{4}-\d{2}-\d{2}/.test(c); }));  // a URL, a path, a filename, or a command run on the repo; never bare prose
+ok('what we know: every row has a source with URL or path AND a date', know.every(r => { const c = cells(r)[2] ?? ''; return EVIDENCE.test(c) && /\d{4}-\d{2}-\d{2}/.test(c); }));  // a URL, a path, a filename, or a command run on the repo; never bare prose
 ok('what we know: every row has a confidence', know.every(r => /🟢|🟡|🔴/.test(r)));
 const depth = fm.match(/^depth:\s*(\w+)/m)?.[1];
 const bench = rows(section('What the market does'));
 if (depth !== 'shallow') {
   ok('benchmarks: 3 to 5 rows', bench.length >= 3 && bench.length <= 5);
-  ok('benchmarks: every row has evidence (path or URL) with a date', bench.every(r => { const c = cells(r)[4] ?? ''; return /(https?:\/\/|[\w.-]+\/[\w.-]+)/.test(c) && /\d{4}-\d{2}-\d{2}/.test(c); }));
+  ok('benchmarks: every row has evidence (path or URL) with a date', bench.every(r => { const c = cells(r)[4] ?? ''; return EVIDENCE.test(c) && /\d{4}-\d{2}-\d{2}/.test(c); }));
   ok('benchmarks: direct and indirect both present', bench.some(r => /^\s*direct\b/i.test(cells(r)[2] ?? '')) && bench.some(r => /^\s*indirect\b/i.test(cells(r)[2] ?? '')));  // the cell may carry a qualifier: 'direct (settings page)'
 }
 const assumptions = section('What we assume').split('\n').filter(l => /^- /.test(l));

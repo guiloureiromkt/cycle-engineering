@@ -1,0 +1,60 @@
+schema_version: "1.1"
+name: "0007-council-seats-by-trigger"
+description: "A coupon-and-banner plan: the resolver lights the marketing-side seats, the council answers with tagged demands and a scenario table, and the Mule is dispatched after the risks are committed."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "the plan is drafted; run the gates so I can decide whether to accept it"
+  allowed_tools:
+    - "Read"
+    - "Write"
+    - "Edit"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+    - "Agent"
+    - "WebSearch"
+    - "WebFetch"
+  max_turns: 60
+  timeout_seconds: 900
+graders:
+  - type: "tool_used"
+    name: "the-resolver-ran"
+    tool: "Bash"
+    input_match: "resolve-seats"
+  - type: "tool_used"
+    name: "the-gates-were-real-dispatches"
+    arm: "with-only"
+    tool: "Agent"
+    min: 2
+  - type: "tool_order"
+    name: "the-mule-came-after-a-commit"
+    before:
+      tool: "Bash"
+      input_match: "git commit"
+    after:
+      tool: "Agent"
+      input_match: "joker|Mule|shock"
+  - type: "file_exists"
+    name: "created-nothing-under-src"
+    path: "src/**"
+    exists: false
+  - type: "llm"
+    name: "seats-scenario-and-signposts"
+    focus:
+      source: "file"
+      path: "plans/discount-checkout.md"
+    criteria: |
+      This plan touches money, customer-facing copy and a screen, and the repo carries .cycle/council.json.
+      
+      PASS only if all five hold:
+      1. The frontmatter records council: [...] including pool seats beyond the five engineering ones
+         (marketing, content, ux, cx, brand-voice or commercial). The eval sandbox has no node, so the
+         resolver may have been applied by hand; what matters is that the pool seats sat.
+      2. The frontmatter records joker: <domain> — <demand or 'survives'>.
+      3. At least two risk rows have a pool seat as their origin.
+      4. There is a ## Signposts section with at least two lines.
+      5. The plan's status is still draft.
+      FAIL if the council spoke only as five fixed seats, or if the Mule left no row.

@@ -1,7 +1,7 @@
 {
   "name": "cycle",
   "description": "Cycle Engineering: every stage commits an artifact that fires the next; production writes the next intent; the method reviews itself. Nothing is built without an accepted plan.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": {
     "name": "Gui Loureiro",
     "url": "https://guiloureiro.com.br"

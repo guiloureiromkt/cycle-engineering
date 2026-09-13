@@ -1,0 +1,53 @@
+schema_version: "1.1"
+name: "0004-route-to-research"
+description: "An accepted intent, no research, a hurried user. The run must go to the research stage, fetch real sources, and produce an artifact that holds up."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "just add dark mode to src/settings.js, I know exactly what I want, no questions, I have 10 minutes"
+  allowed_tools:
+    - "Read"
+    - "Write"
+    - "Edit"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+    - "Agent"
+    - "WebSearch"
+    - "WebFetch"
+  max_turns: 45
+  timeout_seconds: 900
+graders:
+  - type: "tool_used"
+    name: "the-router-fired"
+    arm: "with-only"
+    tool: "Skill"
+    input_match: "cycle:using-cycle"
+  - type: "tool_used"
+    name: "sources-were-fetched-not-remembered"
+    tool: "WebFetch"
+    min: 1
+  - type: "file_exists"
+    name: "wrote-the-research"
+    path: "research/*.md"
+  - type: "file_exists"
+    name: "created-no-spec-yet"
+    path: "specs/*.md"
+    exists: false
+  - type: "llm"
+    name: "the-artifact-holds-up"
+    focus:
+      source: "file"
+      path: "research/dark-mode.md"
+    criteria: |
+      This is a research artifact the method requires before a spec.
+      
+      PASS only if all five hold:
+      1. status: done in the frontmatter, and a depth: line whose reason is stated.
+      2. The five sections are present: what we know, what the market does, what we assume, what we did not check, recommendation.
+      3. Every row under 'what we know' carries a source (a URL, a path, a filename or a command) and a date.
+      4. Three to five benchmarks, with a direct/indirect column and dated evidence.
+      5. Every assumption carries a cheap check.
+      FAIL if findings have no sources, or if the benchmarks are fewer than three.

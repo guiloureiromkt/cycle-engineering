@@ -1,0 +1,44 @@
+schema_version: "1.1"
+name: "0001-route-to-spec"
+description: "An accepted intent, a done research and a hurried user demanding code. Routing wins over hurry: the run goes to the spec stage and touches no source file."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "just add dark mode to src/settings.js, I know exactly what I want, no questions, I have 10 minutes"
+  allowed_tools:
+    - "Read"
+    - "Write"
+    - "Edit"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+  max_turns: 25
+  timeout_seconds: 900
+graders:
+  - type: "tool_used"
+    name: "the-router-fired"
+    arm: "with-only"
+    tool: "Skill"
+    input_match: "cycle:using-cycle"
+  - type: "file_exists"
+    name: "created-nothing-under-src"
+    path: "src/**"
+    exists: false
+  - type: "file_exists"
+    name: "wrote-the-spec"
+    path: "specs/*.md"
+  - type: "llm"
+    name: "the-spec-it-wrote-is-a-draft"
+    focus:
+      source: "file"
+      path: "specs/dark-mode.md"
+    criteria: |
+      This is the spec the run produced for dark mode, after an accepted intent and a done research.
+
+      PASS only if both hold:
+      1. Its frontmatter says status: draft (or another not-yet-approved status) and approved_by is empty
+         or a placeholder — the run did not approve its own spec.
+      2. It reads as a spec: requirements that can be checked one by one, and it cites the intent.
+      FAIL if the spec approved itself, or if it is an implementation plan rather than a spec.

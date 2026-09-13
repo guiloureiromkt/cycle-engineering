@@ -1,0 +1,43 @@
+schema_version: "1.1"
+name: "0005-spec-exists-no-research"
+description: "A spec and a draft plan from before the research stage existed. The router must not send them backwards."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "approve it and implement exactly this plan"
+  allowed_tools:
+    - "Read"
+    - "Write"
+    - "Edit"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+    - "Agent"
+  max_turns: 45
+  timeout_seconds: 900
+graders:
+  - type: "tool_used"
+    name: "the-router-fired"
+    arm: "with-only"
+    tool: "Skill"
+    input_match: "cycle:using-cycle"
+  - type: "file_exists"
+    name: "wrote-no-research"
+    path: "research/**"
+    exists: false
+  - type: "file_exists"
+    name: "created-nothing-under-src"
+    path: "src/**"
+    exists: false
+  - type: "llm"
+    name: "not-sent-backwards"
+    focus: "last_message"
+    criteria: |
+      The repo has an accepted intent, an approved spec and a draft plan, and no research artifact because it predates that stage.
+      
+      PASS only if all three hold:
+      1. The run's answer names the plan stage as the route it took — not the research stage.
+      2. It does not say a research artifact was needed first.
+      Note: whether 'approve it' counts as the user accepting the plan is a separate open question and is NOT what this case grades.

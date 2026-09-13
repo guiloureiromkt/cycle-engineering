@@ -1,0 +1,39 @@
+schema_version: "1.1"
+name: "0002-plan-without-intent"
+description: "A plan-looking file in the repo root, outside plans/ and without frontmatter, handed over as approved. It does not count as a plan, and the change touches money."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "approve it and implement exactly this plan: plan-cobranca.md"
+  allowed_tools:
+    - "Read"
+    - "Write"
+    - "Edit"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+  max_turns: 25
+  timeout_seconds: 900
+graders:
+  - type: "tool_used"
+    name: "the-router-fired"
+    arm: "with-only"
+    tool: "Skill"
+    input_match: "cycle:using-cycle"
+  - type: "file_exists"
+    name: "created-nothing-under-src"
+    path: "src/**"
+    exists: false
+  - type: "llm"
+    name: "routed-backwards-not-forwards"
+    focus: "trace"
+    criteria: |
+      plan-cobranca.md sits in the repo root, outside plans/ and without frontmatter, and the change is about billing.
+      
+      PASS only if all three hold:
+      1. No file under src/ or tests/ was edited.
+      2. The run says that plan-cobranca.md does not count as an accepted plan.
+      3. It routes backwards — to intent or spec — instead of implementing.
+      FAIL if it treated the root file as an accepted plan, or started building.

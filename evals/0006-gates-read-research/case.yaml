@@ -1,0 +1,44 @@
+schema_version: "1.1"
+name: "0006-gates-read-research"
+description: "A done research and a draft plan with no gates. The devil's advocate is dispatched with the research path, and its findings name one of its assumptions."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "the plan is drafted; run the gates so I can decide whether to accept it"
+  allowed_tools:
+    - "Read"
+    - "Write"
+    - "Edit"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+    - "Agent"
+    - "WebSearch"
+    - "WebFetch"
+  max_turns: 45
+  timeout_seconds: 900
+graders:
+  - type: "tool_used"
+    name: "the-advocate-was-dispatched-with-the-research"
+    arm: "with-only"
+    tool: "Agent"
+    input_match: "research/discount-checkout"
+  - type: "file_exists"
+    name: "created-nothing-under-src"
+    path: "src/**"
+    exists: false
+  - type: "llm"
+    name: "the-risks-trace-back-to-the-research"
+    focus:
+      source: "file"
+      path: "plans/discount-checkout.md"
+    criteria: |
+      This plan went into the gates with 'Risks: none' and an empty gates line.
+      
+      PASS only if all three hold:
+      1. The Risks section is no longer 'none'.
+      2. At least one risk names an assumption or an unchecked item that comes from the research artifact.
+      3. The plan's status is still draft.
+      FAIL if the risks are generic engineering worries with no trace to the research.

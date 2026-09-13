@@ -44,6 +44,14 @@ Statuses: intent `draft|accepted|closed` · research `draft|done` · spec `draft
 - A `skill` names a host skill the cycle never bundles (Anthropic's knowledge-work plugins: `claude plugin marketplace add anthropics/knowledge-work-plugins`); when absent the seat says "lens not installed; general practice". A `knowledge` id must exist in `config.knowledge`; a knowledge-backed seat summarises and never quotes sensitive content verbatim into the plan.
 - The joker is the Mule: dispatched separately, in a fresh context, on `models.joker`, **after** the risks table (advocate + pre-mortem + council rows) is committed; its shock must be absent from that table. The scenario seat writes no weights on futures and leaves `Signposts:` lines that the plan carries under `## Signposts` and `cycle:maintain` reads.
 
+## The gate (`npm run gate`, `scripts/gate.mjs`)
+- Runs before a publish, not on a pull request: this repository has none.
+- Sequence: preflight (the runner still speaks the flags used) → `npm test` → base resolution (`git describe --tags`; **no base is a failure, never a pass**) → the commit-shape rule (no commit touches both `evals/` and `skills|agents|hooks|scripts|templates`) → case selection from `evals/coverage.json` → `claude plugin eval` on the selected cases → exit.
+- `evals/coverage.json` maps every method file to one of three things: a list of case ids, `{tests: "<file>"}` when a unit test covers it deterministically, or `{uncovered: "<reason>", since: "<date>"}` — declared debt, printed on every run and counted by the weekly routine. A file mapped by **nothing** fails the gate.
+- Exit 2 from the runner (the cost ceiling was hit, paid graders may have been skipped) is a **failure**, distinct from exit 1 (a case scored below the threshold).
+- `--threshold` and `--max-cost-usd` live in `package.json`'s `gate` script. They are the owner's numbers: an agent may propose a change in an intent, never make one as a side effect.
+- Three run shapes: **gate** (one run per case, no ablation, only what changed), **baseline** (`--ablation with-without` on a changed skill's case, which is the RED→GREEN the CONTRIBUTING asks for), **full** (`npm run evals:full`, three runs with the ablation arm, weekly and before a minor tag).
+
 ## Hooks (Node, via `hooks/run.sh`)
 - Every gate checks `.cycle/` first (`cycleOn`): no `.cycle/`, no gate, no exception. Opt-out = the HUMAN deletes `.cycle/` in their own terminal.
 - Exit codes: 0 allow · 1 non-blocking error (stderr shown to the user; the action proceeds) · 2 block (stderr goes to Claude).

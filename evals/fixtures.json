@@ -1,0 +1,34 @@
+{
+  "0001-route-to-spec": {
+    "fixture": "a"
+  },
+  "0002-plan-without-intent": {
+    "fixture": "b"
+  },
+  "0003-five-gates": {
+    "fixture": "c"
+  },
+  "0004-route-to-research": {
+    "fixture": "d"
+  },
+  "0005-spec-exists-no-research": {
+    "fixture": "e"
+  },
+  "0006-gates-read-research": {
+    "fixture": "f"
+  },
+  "0007-council-seats-by-trigger": {
+    "fixture": "g",
+    "config": {
+      "gates": "full"
+    },
+    "council": true
+  },
+  "0008-council-all-agree": {
+    "fixture": "h",
+    "config": {
+      "gates": "full"
+    },
+    "council": true
+  }
+}

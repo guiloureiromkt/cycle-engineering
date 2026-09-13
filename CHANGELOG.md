@@ -4,6 +4,32 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-13
+
+The method's own eval suite stops being a checklist a person ticks and becomes a scored suite the host runs, with a gate in front of every publish. This is the first half of "the cycle runs on itself": the measuring stick. The second half — a retro the cycle writes for itself and a weekly routine — is 0.6.0, deliberately separate, because a slice that rewrites every case cannot be scored by them.
+
+Always-on context per session: unchanged (no skill or agent was added).
+
+### Added
+- **The suite is native.** Eight cases as `evals/<id>/case.yaml` (schema 1.1) with a `scaffold.sh` that seeds the workspace and typed graders: `tool_used` with `input_match`, `file_exists` with `exists: false`, `tool_order`, and `llm` judges pointed at the files a run produces. `claude plugin eval` scores them and its `--ablation with-without` arm is the RED→GREEN baseline `CONTRIBUTING.md` asks for. The JSON cases retire; `scripts/port-check.mjs` proves all 34 of their `accepted_if` lines landed as a grader or a named hand-check, reading the retired files from `git show v0.4.0:` so the check cannot go vacuous.
+- **`npm run gate`** (`scripts/gate.mjs`): preflight, `npm test`, base resolution, the commit-shape rule, case selection, a bounded eval run. Ten tests in `tests/gate.test.mjs`. Its first act was to fail the commit of its own author.
+- **`evals/coverage.json`**: every method file maps to cases, to the unit test that covers it deterministically, or to **declared debt** (`{uncovered, since}`) that the gate prints on every run. A file mapped by nothing fails. A test keeps the map from rotting; it caught a rename minutes after it was written.
+- **Five local tags** (`v0.2.0` … `v0.4.0`), recovered from the commits that set each version: this working repository had **none**, so the gate had no base to compare against. `v0.4.0` sits at the commit that recorded the publish, because a tag marks what shipped.
+
+### Changed
+- `evals/run.mjs` is now the scaffold assembler a case calls, not a checklist printer. `evals/README.md` carries the case schema, the grader table and the two traps that cost real money (below). `skills/evolve/references/evals.md` and the user-facing `templates/eval-example/` move to the native format. `CONTRIBUTING.md` states the prerequisites, the real costs and the untrusted-scaffold rule; `docs/CONTRACT.md` documents the gate and the three run shapes.
+
+### What the first honest run says
+Eight cases, **three pass, overall 0.76, US$13.65, 23 minutes** (`evals/results/2026-09-13-port.md`). Two failures are real findings, not case defects: a run created files under `src/` from "approve it and implement" on a **draft** plan (the acceptance-by-word intent, now measured rather than suspected), and a fixture whose plan already records its gates cannot prove a dispatch. Three cases had their judges re-pointed and are **unconfirmed**: 0001, 0003 and 0005 have not been re-run.
+
+### Two traps, paid for
+- **A judge reading `focus: trace` sees only the first 12 and the last 12 messages.** On a 20-to-46-turn run it reads hook noise and misses the work. Every trace judge on a long run failed; every judge reading a produced file passed.
+- **`scaffold_script` is `context.scaffold_script` and names a file.** Written as an inline command under `execution:` it is silently ignored, the workspace stays empty, and a case can score **1.00 while proving nothing** — which is exactly what the first port did before anyone noticed.
+- The eval sandbox has **no `node` and no `npm`**: a case cannot expect `scripts/*.mjs` or `npm test` to run inside it.
+
+### Migration
+Nothing to do. `evals/` is the plugin's own suite; a user repo is untouched.
+
 ## [0.4.0] - 2026-09-12
 
 Gate 4 stops being five fixed engineering voices. The owner's diagnosis (12/09): the council sat on marketing products for nine days with no marketing seat, and he improvised two seats by hand in a prompt. Before writing the plan, the premise was tested: on a coupon-and-banner plan, six pool seats with briefs only (no corpus, no skill) produced six demands the five engineering seats did not, at +11% tokens (`evals/results/2026-09-12-council-pool-experiment.md`).
@@ -124,7 +150,8 @@ Always-on context per session: **~1,816 tokens**, measured with `claude plugin d
 
 Portuguese prototype, local only. Plugin `ciclo`, bash hooks depending on `jq`, skills coupled to the author's own skill library and knowledge base. Never published.
 
-[Unreleased]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.2.1...v0.2.2

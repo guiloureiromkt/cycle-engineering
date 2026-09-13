@@ -1,0 +1,188 @@
+{
+  "agents/council.md": [
+    "0007-council-seats-by-trigger",
+    "0008-council-all-agree"
+  ],
+  "agents/devils-advocate.md": [
+    "0006-gates-read-research",
+    "0003-five-gates"
+  ],
+  "agents/joker.md": [
+    "0007-council-seats-by-trigger",
+    "0008-council-all-agree"
+  ],
+  "agents/verifier.md": {
+    "uncovered": "no case dispatches the verifier yet; the verification gate runs after a build, and no fixture builds",
+    "since": "2026-09-13"
+  },
+  "hooks/_lib.mjs": {
+    "tests": "tests/hooks.test.mjs"
+  },
+  "hooks/hooks.json": {
+    "tests": "tests/hooks.test.mjs"
+  },
+  "hooks/plan-sync.mjs": {
+    "tests": "tests/hooks.test.mjs"
+  },
+  "hooks/pre-bash.mjs": {
+    "tests": "tests/hooks.test.mjs"
+  },
+  "hooks/production-gate.mjs": {
+    "tests": "tests/hooks.test.mjs"
+  },
+  "hooks/protect-cycle.mjs": {
+    "tests": "tests/hooks.test.mjs"
+  },
+  "hooks/run.sh": {
+    "tests": "tests/hooks.test.mjs"
+  },
+  "hooks/session-start.mjs": {
+    "tests": "tests/hooks.test.mjs"
+  },
+  "hooks/snapshot-guard.mjs": {
+    "tests": "tests/hooks.test.mjs"
+  },
+  "hooks/stop-uncommitted.mjs": {
+    "tests": "tests/hooks.test.mjs"
+  },
+  "scripts/gate.mjs": {
+    "tests": "tests/gate.test.mjs"
+  },
+  "scripts/port-check.mjs": {
+    "tests": "tests/gate.test.mjs"
+  },
+  "scripts/resolve-seats.mjs": [
+    "0007-council-seats-by-trigger",
+    "0008-council-all-agree"
+  ],
+  "skills/adoption-filter/SKILL.md": {
+    "uncovered": "reached from an intent sweep; no case sweeps",
+    "since": "2026-09-13"
+  },
+  "skills/brainstorming/SKILL.md": {
+    "uncovered": "bundled copy; upstream's own behaviour",
+    "since": "2026-09-13"
+  },
+  "skills/build/SKILL.md": [
+    "0005-spec-exists-no-research"
+  ],
+  "skills/deploy/SKILL.md": {
+    "uncovered": "case 0009 (publish without a gate run) is planned for 0.6.0",
+    "since": "2026-09-13"
+  },
+  "skills/evolve/SKILL.md": {
+    "uncovered": "the stage's own triggers are exercised by the weekly routine, not by a case",
+    "since": "2026-09-13"
+  },
+  "skills/evolve/references/evals.md": {
+    "uncovered": "documentation of the case format; read by a person, not exercised by a run",
+    "since": "2026-09-13"
+  },
+  "skills/executing-plans/SKILL.md": {
+    "uncovered": "bundled copy; reached only from a build",
+    "since": "2026-09-13"
+  },
+  "skills/gauntlet/SKILL.md": [
+    "0003-five-gates"
+  ],
+  "skills/intent/SKILL.md": [
+    "0002-plan-without-intent"
+  ],
+  "skills/maintain/SKILL.md": {
+    "uncovered": "no fixture carries a production incident to react to",
+    "since": "2026-09-13"
+  },
+  "skills/parallel-agents/SKILL.md": {
+    "uncovered": "bundled copy; reached from a sweep or a build",
+    "since": "2026-09-13"
+  },
+  "skills/plan/SKILL.md": [
+    "0003-five-gates",
+    "0006-gates-read-research",
+    "0007-council-seats-by-trigger",
+    "0008-council-all-agree"
+  ],
+  "skills/research/SKILL.md": [
+    "0004-route-to-research"
+  ],
+  "skills/spec/SKILL.md": [
+    "0001-route-to-spec"
+  ],
+  "skills/subagent-driven-development/SKILL.md": {
+    "uncovered": "bundled copy; reached only from a build",
+    "since": "2026-09-13"
+  },
+  "skills/task-graph/SKILL.md": [
+    "0003-five-gates"
+  ],
+  "skills/tdd/SKILL.md": {
+    "uncovered": "bundled copy; reached only from a build",
+    "since": "2026-09-13"
+  },
+  "skills/test/SKILL.md": {
+    "uncovered": "case 0010 (a closing cycle writes its retro) is planned for 0.6.0",
+    "since": "2026-09-13"
+  },
+  "skills/using-cycle/SKILL.md": [
+    "0001-route-to-spec",
+    "0002-plan-without-intent",
+    "0004-route-to-research",
+    "0005-spec-exists-no-research"
+  ],
+  "skills/verification-gate/SKILL.md": {
+    "uncovered": "reached only from a build; no fixture builds",
+    "since": "2026-09-13"
+  },
+  "skills/verify-before-done/SKILL.md": {
+    "uncovered": "reached only from a build; no fixture builds",
+    "since": "2026-09-13"
+  },
+  "skills/worktrees/SKILL.md": {
+    "uncovered": "bundled copy; reached only from a build",
+    "since": "2026-09-13"
+  },
+  "skills/writing-plans/SKILL.md": [
+    "0003-five-gates"
+  ],
+  "templates/REVIEW.md": {
+    "uncovered": "read by cycle:deploy's three passes; no case deploys",
+    "since": "2026-09-13"
+  },
+  "templates/bands.yaml": {
+    "uncovered": "read by cycle:maintain; no case maintains",
+    "since": "2026-09-13"
+  },
+  "templates/claude-md-block.md": [
+    "0001-route-to-spec"
+  ],
+  "templates/config.json": [
+    "0001-route-to-spec"
+  ],
+  "templates/council.json": [
+    "0007-council-seats-by-trigger",
+    "0008-council-all-agree"
+  ],
+  "templates/eval-example/case.yaml": {
+    "uncovered": "documentation of the case format; a user copies it",
+    "since": "2026-09-13"
+  },
+  "templates/eval-example/scaffold.sh": {
+    "uncovered": "documentation of the case format; a user copies it",
+    "since": "2026-09-13"
+  },
+  "templates/gate.json": {
+    "tests": "tests/hooks.test.mjs"
+  },
+  "templates/intent.md": [
+    "0002-plan-without-intent"
+  ],
+  "templates/plan.md": [
+    "0003-five-gates"
+  ],
+  "templates/research.md": [
+    "0004-route-to-research"
+  ],
+  "templates/spec.md": [
+    "0001-route-to-spec"
+  ]
+}

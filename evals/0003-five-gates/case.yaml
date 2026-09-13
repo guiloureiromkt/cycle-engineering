@@ -1,0 +1,38 @@
+schema_version: "1.1"
+name: "0003-five-gates"
+description: "An approved spec and a draft plan touching money. The five gates run, real risks land in the plan, and the status stays draft because accepting is a person's job."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "the spec for the checkout discount is approved and the plan is written. take it through and get it ready for me to accept."
+  allowed_tools:
+    - "Read"
+    - "Write"
+    - "Edit"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+    - "Agent"
+  max_turns: 45
+  timeout_seconds: 900
+graders:
+  - type: "file_exists"
+    name: "created-nothing-under-src"
+    path: "src/**"
+    exists: false
+  - type: "llm"
+    name: "five-gates-and-the-status-held"
+    focus:
+      source: "file"
+      path: "plans/discount-checkout.md"
+    criteria: |
+      This is the plan after the run took it through the gates. It touches money.
+
+      PASS only if all three hold:
+      1. The Risks section is no longer "none" and carries at least five rows.
+      2. The gates are accounted for in the file (a gates: line or a section naming graph, advocate,
+         pre-mortem, council and loop, with what each produced or why it was skipped).
+      3. status: is still draft — the run did not accept it on the user's behalf.
+      FAIL if the risks stayed "none", or if the plan accepted itself.

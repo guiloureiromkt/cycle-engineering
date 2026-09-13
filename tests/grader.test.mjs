@@ -28,6 +28,33 @@ test("grader: spec → research link passes on fixture c", () => {
   assert.equal(r.status, 0, r.stdout);
   assert.match(r.stdout, /PASS {2}spec frontmatter research: points at an existing done file/);
 });
+test("grader: a command run on this machine, dated, is a source (a URL is not the only evidence)", () => {
+  const base = readFileSync(join(repo, "evals/samples/research-shallow.md"), "utf8");
+  const withCmd = base.replace(
+    /\| The total is computed[^\n]*\n/,
+    "| The host CLI reports version 2.1.270 and the eval runner is no longer gated | `claude plugin eval --help` · `claude --version` · 2026-09-13 | 🟢 fact |\n"
+  );
+  assert.notEqual(withCmd, base, "the replacement must hit a row");
+  const dir = mkdtempSync(join(tmpdir(), "cycle-grader-"));
+  const f = join(dir, "x.md");
+  writeFileSync(f, withCmd);
+  const r = grade(f);
+  assert.equal(r.status, 0, r.stdout);
+});
+test("grader: a source with no evidence at all still fails (the widening did not open the door)", () => {
+  const base = readFileSync(join(repo, "evals/samples/research-shallow.md"), "utf8");
+  const noEvidence = base.replace(
+    /\| The total is computed[^\n]*\n/,
+    "| Everyone knows floats are imprecise | common knowledge · 2026-09-13 | 🟢 fact |\n"
+  );
+  const dir = mkdtempSync(join(tmpdir(), "cycle-grader-"));
+  const f = join(dir, "y.md");
+  writeFileSync(f, noEvidence);
+  const r = grade(f);
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stdout, /FAIL {2}what we know: every row has a source/);
+});
+
 test("grader: an escaped pipe inside a cell does not shift the source column", () => {
   const base = readFileSync(join(repo, "evals/samples/research-shallow.md"), "utf8");
   const withPipe = base.replace(

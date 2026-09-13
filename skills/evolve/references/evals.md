@@ -1,19 +1,26 @@
-# Evolve · evals in detail
+# Evals · the method's regression test
 
-Companion to front 2 of `cycle:evolve`.
+An eval is a real task plus what counts as accepted. The host runs them: `claude plugin eval <plugin>` loads the plugin, runs each case, scores it with graders and can compare against a no-plugin arm.
 
-## What an eval is
-A real task the agent has done, plus what counts as accepted, in `evals/<id>.json` (template: `<plugin root>/templates/eval-example.json`). Fields: `id`, `origin` (incident or real task, with date), `prompt` (the task as it was requested), `accepted_if` (a list of checks a script or a reviewer can confirm), `tools` (the restricted tool set the run may use).
+## Where a case lives
+One directory per case under `evals/<id>/`:
+- `case.yaml` — `schema_version: "1.1"`, `name`, `runs`, `context.scaffold_script` (a **script file** in the case directory that seeds the workspace, run only under `--scaffold`), `execution.{prompt, allowed_tools, max_turns, timeout_seconds}`, and `graders`.
+- `scaffold.sh` — runs in the empty workspace as you; `$PWD` is the workspace, `$0` is its own absolute path.
+- `case.meta.md` — where the case came from, and any check no grader can express.
 
-## Building the first set
-- Start with 20 to 50 recent real tasks whose result was accepted. Accepted results are the ground truth; do not invent tasks.
-- Each fixed incident becomes a permanent eval, written by whoever handled it, while the context is fresh.
-- An eval that stopped discriminating (every run passes, or every run fails for reasons unrelated to the method) leaves; what the monitoring suggests enters.
+## Graders
+`regex · tool_used · tool_order · file_exists · llm · baseline`. Each needs a `name`. Useful shapes:
+- `tool_used` with `input_match` (a regex over the call's JSON input) and `min`/`max`; `min: 0, max: 0` asserts a tool was never called.
+- `file_exists` with `path` and `exists: false` — but it only sees files the **run created**: a file the scaffold wrote, or one the run merely edited, is invisible to it.
+- `llm` with `focus`: `last_message` (default), `files`, `{source: file, path: …}` to read what the run produced, or `trace`. **A trace judge sees only the first 12 and the last 12 messages**, so on a long run it reads hook noise and misses the work: prefer judging a produced file.
+- `arm: with-only` keeps a plugin-fired indicator out of the no-plugin arm's score.
 
-## Running
-- CI: on any PR that touches `CLAUDE.md`, `.claude/**`, `skills/`, `agents/`, `hooks/` or `templates/`; on a daily cron; and whenever a new model is adopted.
-- Run each eval with the host's headless mode and a restricted tool set, JSON output, and a check script comparing the output against `accepted_if`. When the host ships a native eval runner, prefer it and keep the JSON as the fallback format.
-- A change that lowers the pass rate is reviewed before merge, not after.
+## The three run shapes
+| shape | command | when |
+|---|---|---|
+| gate | `npm run gate` | before every publish; one run per case, no ablation, only the cases covering what changed |
+| baseline | `claude plugin eval . --ablation with-without --case '<id>*'` | when a changed skill owes a RED→GREEN |
+| full | `npm run evals:full` | weekly, and before a minor tag |
 
-## Reading results
-Pass rate per eval over time, not a single number. A drop tied to a skill change is a regression of the method; a drop tied to a model change is an adoption question that goes back through `cycle:adoption-filter` and an intent.
+## Where cases come from, and who may write them
+Every case is a real task with a date in its `origin`. `cycle:evolve` may propose cases; it may never grade a change with a case that same change introduced, and it never moves the threshold. Both are the owner's.

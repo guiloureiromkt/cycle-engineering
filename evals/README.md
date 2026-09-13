@@ -8,28 +8,68 @@ Claude Code ships `claude plugin eval`, which reads `evals/**/case.yaml` (or `pr
 
 ## What a case is
 
-One `NNNN-<name>.json` per case:
+One directory per case: `evals/<id>/case.yaml`, a `scaffold.sh` that seeds the workspace, and `case.meta.md` carrying provenance and any hand-check the graders cannot express. The authoritative reference is the host's own documentation (`claude plugin eval --help`, and the plugin-evals page); what follows is what this suite uses and the traps it already fell into.
 
-| Field | What it holds |
-|---|---|
-| `id` | `NNNN-<short-name>`, matching the filename |
-| `origin` | The real task or incident behind it, with its date. Never an invented scenario — accepted results are the ground truth |
-| `fixture` | The directory under `fixtures/` that the run starts from |
-| `prompt` | The task as it was actually requested, wording included |
-| `accepted_if` | Checks a reviewer or a script can confirm, each one true or false on its own |
-| `tools` | The restricted tool set the run may use |
+```yaml
+schema_version: "1.1"          # 1.1, not 1.0
+name: 0002-plan-without-intent
+description: one line: the situation the case puts the method in
+runs: 1                        # the gate uses 1; the full run uses 3
+context:
+  scaffold_script: scaffold.sh # a FILE in the case directory — not an inline command
+execution:
+  prompt: "the task, in the words it was really asked"
+  allowed_tools: [Read, Write, Edit, Bash, Glob, Grep, Skill]
+  max_turns: 45
+  timeout_seconds: 900
+graders:
+  - type: tool_used
+    name: the-router-fired     # every grader needs a name
+    arm: with-only             # a plugin-fired indicator, not scored in the no-plugin arm
+    tool: Skill
+    input_match: "cycle:using-cycle"
+```
+
+`scaffold.sh` runs **in the empty workspace**, as you, only under `--scaffold`. `$PWD` is the workspace and `$0` is the script's absolute path, so a case seeds itself with:
+
+```bash
+node "$(dirname "$0")/../run.mjs" --assemble <case-id> --out "$PWD"
+```
+
+### The grader types this suite uses
+| type | asserts | the trap |
+|---|---|---|
+| `tool_used` | calls to `tool` whose JSON input matches `input_match`, between `min` (default 1) and `max` | `min: 0, max: 0` is how you assert a tool was never called |
+| `tool_order` | `before` and `after` were both called, in that order | each is a tool name or `{tool, input_match}` |
+| `file_exists` | a file **Claude created** matches the `path` glob, or none does with `exists: false` | it only sees files created **during the run**: a file the scaffold wrote, or one Claude merely modified, is invisible to it. "Nothing under `src/` changed" therefore needs an `llm` grader over the trace |
+| `regex` | a pattern in the target (`last_message` by default, or `trace`, `files`, a file's contents) | `match: not_contains` for absence |
+| `llm` | a judge votes PASS in at least two of three votes | `focus` picks what it reads: `last_message`, `trace`, `files`, or `{source: file, path: …}` to grade a file the run produced |
+| `baseline` | the run is at least as good as a reference transcript | |
+
+Prefer deterministic graders. Every `llm` grader is named in the case's `case.meta.md`, so the drift risk stays visible.
+
+### What the eval sandbox does not have
+`node` and `npm` are **not installed** in the run's sandbox. A case cannot expect `scripts/*.mjs` or `npm test` to run there; a good run applies the logic by hand and says so, and the criteria must accept that. Found on 2026-09-13 when a run that did everything right was failed by a judge demanding the resolver's printed summary.
+
+### 🩸 The false green, 2026-09-13
+The first port of `0002` scored **1.00** and proved nothing: `scaffold_script` had been written as an inline command under `execution:`, which the loader silently ignored, so the agent ran in an **empty workspace**. "No file under `src/` changed" was vacuously true and the judge passed a run that had nothing to do. The lesson is in the suite now: a case whose fixture matters carries a `file_exists` grader for something the fixture makes possible, so an empty workspace fails loudly instead of passing quietly.
 
 ## Running
 
 ```bash
-npm run evals              # assembles all three
-npm run evals -- --case=0002
+npm run evals            # every case once, no ablation arm, ceiling $25 — what the gate uses
+npm run evals:full       # three runs per case with the no-plugin arm — weekly, and before a minor tag
+npm run gate             # npm test, the commit-shape rule, then the cases covering what changed
+npm run port-check       # nothing was lost when the JSON cases retired
 npm run grade-research research/<name>.md [specs/<name>.md]   # machine checks on a research artifact
 ```
 
-The command copies each fixture to a scratch directory and adds the `.cycle/` that turns the plugin on — the fixtures stay plain sample repos in the tree, so nothing here is mistaken for the plugin's own configuration. It prints, per case, the working directory, the prompt and the checklist. It does not drive the agent.
+Every run needs `--scaffold` (off by default, or the workspace stays empty) and `--trust-plugin` in a
+non-interactive shell. Tools beyond the read-only set need `--allow-tools` as well as the case's own
+`allowed_tools`; the runner warns when a grader asks for a tool the operator did not grant.
 
-The run itself is one fresh subagent per case, with its working directory set to the printed path and no context from this repository. Then check the boxes by hand and write the result to `results/<date>.md`: which case, which checks passed, and the excerpt that proves each one. A failing check is a bug in the skill, not a criterion to soften.
+The results of a run land in `results/<timestamp>/` (and `--json <path>` writes the machine-readable
+document). What each run cost is part of the record: see `results/2026-09-13-*.md`.
 
 ## Where new cases come from
 

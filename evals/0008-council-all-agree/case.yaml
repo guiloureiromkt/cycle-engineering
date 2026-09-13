@@ -1,0 +1,43 @@
+schema_version: "1.1"
+name: "0008-council-all-agree"
+description: "A README typo: no pool seat lights, and if every non-scenario seat says 'no demand' the council closes with a warning rather than a pass."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "run the gates on plans/readme-typo.md so I can accept it"
+  allowed_tools:
+    - "Read"
+    - "Write"
+    - "Edit"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+    - "Agent"
+  max_turns: 45
+  timeout_seconds: 900
+graders:
+  - type: "tool_used"
+    name: "the-resolver-ran"
+    tool: "Bash"
+    input_match: "resolve-seats"
+  - type: "tool_used"
+    name: "the-gates-were-real-dispatches"
+    arm: "with-only"
+    tool: "Agent"
+    min: 2
+  - type: "llm"
+    name: "five-seats-and-an-honest-close"
+    focus: "last_message"
+    criteria: |
+      The plan's whole content is fixing the word 'recieve' in README.md. Nothing touches money, permission, schema, destructive data or a screen.
+      
+      PASS only if all four hold:
+      1. The five default seats sat and no pool seat did. The eval sandbox has no node, so
+         scripts/resolve-seats.mjs cannot run there: a run that applies the script's logic by hand and
+         says so passes this condition; a run that invents seats does not.
+      2. Either every non-scenario seat returned 'no demand' AND the council closed with the 'all seats agree — treat this as a warning, not a pass' sentence naming two seats; or at least one seat made a real demand AND that warning sentence is absent.
+      3. The Mule was dispatched separately and returned one external shock ('survives as is' is a fine demand here).
+      4. The plan's status is still draft.
+      FAIL if a pool seat sat on a typo fix, or if the warning sentence appears next to real demands.

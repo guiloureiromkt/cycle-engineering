@@ -47,3 +47,20 @@ test("every cycle:<name> reference resolves to skills/<name>/SKILL.md", () => {
   console.log(`refs: ${refs.size} distinct cycle:<name> reference(s) across ${SCAN_DIRS.join(" ")}; ${skills.size} skill(s) installed`);
   assert.equal(missing.length, 0, `cycle:<name> references without skills/<name>/SKILL.md (bundle the skill or rewrite the line):\n${report}`);
 });
+
+test("evals/coverage.json: every key names an existing file and every case an existing case directory", () => {
+  const covPath = join(repo, "evals", "coverage.json");
+  if (!existsSync(covPath)) return;                       // the map is optional until the gate exists
+  const cov = JSON.parse(readFileSync(covPath, "utf8"));
+  const caseDirs = new Set(readdirSync(join(repo, "evals"), { withFileTypes: true })
+    .filter(d => d.isDirectory() && /^\d{4}-/.test(d.name)).map(d => d.name));
+  const badKeys = Object.keys(cov).filter(k => !existsSync(join(repo, k)));
+  assert.deepEqual(badKeys, [], "coverage.json keys that name no file (the map rots when a file is renamed)");
+  const badCases = [...new Set(Object.values(cov).filter(Array.isArray).flat())].filter(c => !caseDirs.has(c));
+  assert.deepEqual(badCases, [], "coverage.json names cases that do not exist");
+  for (const [k, v] of Object.entries(cov)) {
+    const shaped = Array.isArray(v) || (v && typeof v === "object" && (typeof v.tests === "string" || (typeof v.uncovered === "string" && typeof v.since === "string")));
+    assert.ok(shaped, `coverage.json entry for ${k} must be a case list, {tests}, or {uncovered, since}`);
+  }
+  console.log(`coverage: ${Object.keys(cov).length} method file(s) mapped`);
+});
