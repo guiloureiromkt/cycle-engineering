@@ -4,6 +4,46 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-13
+
+0.5.0 built the measuring stick. This is the half that uses it: a cycle that closes writes a retro about itself from git, `cycle:evolve` gets four triggers instead of a wish, and a weekly routine reads what the retros say and proposes — without being able to merge anything.
+
+Always-on context per session: **~1,950 tokens, unchanged** (no skill description changed).
+
+### Added
+- **`scripts/retro.mjs`** — the retro a closed cycle writes about itself, into `.cycle/work/<intent>/retro.md`, with the machine numbers above a marker and the session's own prose below it, labelled. `cycle:test` writes it when the proof is pasted; `cycle:deploy` writes it if test did not. `--repeats` lists findings that appear in two or more retros, which is how a lesson becomes a proposed line in the method's `CLAUDE.md` (as a branch, never a commit to the default branch).
+- **`docs/routines/weekly-evolve.md`** — the weekly routine's definition, not a description of one: its prompt, the directory it must open in, a tool list with a reason for every forbidden command (`gh pr merge`, `git merge`, a push to a protected branch, any plugin install), the **"did not complete" artifact written before the work starts**, and the rule that a weekly full run and a pre-tag full run never both fire in the same week. `evals/results/cost-log.md` is how it knows.
+- **`method_repo`** in `.cycle/config.json` — `null` everywhere except the repository that holds the cycle. There, `cycle:deploy` refuses to publish without a gate run pasted in the session, and does not lower the threshold to get one.
+- **Cases 0009 and 0010**: the method repo that will not publish without its gate, and the closing cycle that writes its retro from git. `evals/run.mjs` can now build a **git history** for a fixture, at fixed times, so the numbers a case reads never depend on the day it runs.
+- **"The owner" is a role in `docs/CONTRACT.md`**, with a designated backup — the Mule's demand from gate 4, and the honest answer to a method where every gate waits on one person.
+
+### Changed
+- **`cycle:evolve`**: four triggers, each naming what it reads and what it may write — a retro was written, the gate failed, the weekly routine, a person asked. "Monthly, or when a new model ships" invoked it zero times in nine days of real use.
+- The retro's definitions, **measured before the script existed** (`evals/results/2026-09-13-retro-metrics.md`): rework as R7 defined it scored **11 and 8** on this repo's two closed cycles where a person says **1**, because rule 2 of `cycle:build` makes every build commit touch the plan by design. It counts instead the deviations the plan records and the spec amendments made after acceptance. Stage clocks run from the previous artifact's **acceptance**, not its creation — that alone took the intent → research gap from 185 minutes to 2. Stages written by one commit report an `overlap`, never a zero.
+- **0003's judge became three regex graders.** The runner's own warning, on a 36,285-character plan: *"llm judges are noisy on long inputs, prefer a regex grader for large artifacts"*. Three judges had voted FAIL on a run that did nothing wrong.
+
+### Through its own gate
+`0001`, `0009` and `0010` at **1.00**, US$2.37 of the $15 ceiling, base `v0.5.0` (`evals/results/2026-09-13-0.6.0-gate.md`). It took **six** runs to get there — two failures were the method, one was the gate itself, three were the cases:
+
+| | What failed | What it cost |
+|---|---|---|
+| the method | `cycle:test` assumed the retro script would run; the sandbox has no Node, so a cycle closed with no retro at all | US$0.62 |
+| **the method, again** | handed "no questions", a run wrote `status: approved` and signed `approved_by: user (in-session) · fast-track`. Nobody had approved anything | US$2.15 |
+| the gate | `--case` keeps only the last flag: the gate was **scoring one case and reporting the selection** | — |
+| the cases | a `regex` grader's key is `target`, not `focus`; and a case file is validated **only when something selects it**, so a broken case sat in the suite looking fine | US$1.80 |
+| the cases | a pattern that demanded the script's exact line failed a hand-written retro carrying the right numbers in its own layout | US$1.09 |
+
+**Ablation** (`--ablation with-without`, the plugin against no plugin at all): `0001` **1.00 vs 0.33**, `0010` **1.00 vs 0.00**, `0009` **1.00 vs 1.00** — and that last one is reported, not hidden: a session with no cycle skills also refused to publish, because it had no runtime to run a gate with, so caution looked identical to compliance. `0009` is a regression guard, not evidence that `cycle:deploy` earns its keep.
+
+### Three judges, three wrong verdicts
+`0003`, `0008` and `0010` each had an `llm` grader vote FAIL on a run that had done nothing wrong — the last one on a retro that was correct line by line. All three are now deterministic: regex over the file the run creates, tool calls counted in the trace, and the conditions that cannot be mechanised written down as **named hand-checks** in each case's `case.meta.md`. A file grader (`regex`, `file_exists`) only sees files the run **creates**, which is why "the fixture's plan still says draft" became "the run never issued an edit that writes `status: accepted`".
+
+### The confirming runs 0.5.0 owed
+`0001` **passes at 1.00**. `0003` and `0005` failed only their graders, and the evidence says so: 0005's criteria asked for "all three" conditions and listed two, and 0003's judge was reading that 36k-character file. Both are fixed here; `0003`'s unprovable conditions became **named hand-checks** in its `case.meta.md`, because its fixture ships with the gates already recorded and a grader for them would pass without the run doing anything.
+
+### Migration
+`method_repo` defaults to `null`: nothing to do in a product repo. To run the weekly routine, set it to `"."` in the repository that holds your method.
+
 ## [0.5.0] - 2026-09-13
 
 The method's own eval suite stops being a checklist a person ticks and becomes a scored suite the host runs, with a gate in front of every publish. This is the first half of "the cycle runs on itself": the measuring stick. The second half — a retro the cycle writes for itself and a weekly routine — is 0.6.0, deliberately separate, because a slice that rewrites every case cannot be scored by them.
@@ -150,7 +190,8 @@ Always-on context per session: **~1,816 tokens**, measured with `claude plugin d
 
 Portuguese prototype, local only. Plugin `ciclo`, bash hooks depending on `jq`, skills coupled to the author's own skill library and knowledge base. Never published.
 
-[Unreleased]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/guiloureiromkt/cycle-engineering/compare/v0.2.2...v0.3.0

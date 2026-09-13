@@ -42,14 +42,19 @@ node "$(dirname "$0")/../run.mjs" --assemble <case-id> --out "$PWD"
 | `tool_used` | calls to `tool` whose JSON input matches `input_match`, between `min` (default 1) and `max` | `min: 0, max: 0` is how you assert a tool was never called |
 | `tool_order` | `before` and `after` were both called, in that order | each is a tool name or `{tool, input_match}` |
 | `file_exists` | a file **Claude created** matches the `path` glob, or none does with `exists: false` | it only sees files created **during the run**: a file the scaffold wrote, or one Claude merely modified, is invisible to it. "Nothing under `src/` changed" therefore needs an `llm` grader over the trace |
-| `regex` | a pattern in the target (`last_message` by default, or `trace`, `files`, a file's contents) | `match: not_contains` for absence |
+| `regex` | a pattern in the **`target`** (`last_message` by default, or `trace`, `files`, `{source: file, path: …}`) | the key is `target`, not `focus` (that one is the `llm` grader's) — and like `file_exists` it only sees files the run **creates**, so a fixture file cannot be asserted this way. To check that the run did not change something, count tool calls with `tool_used` and `max: 0` |
 | `llm` | a judge votes PASS in at least two of three votes | `focus` picks what it reads: `last_message`, `trace`, `files`, or `{source: file, path: …}` to grade a file the run produced |
 | `baseline` | the run is at least as good as a reference transcript | |
 
+**A case file is validated only when it is selected.** `--tag` or `--case` that matches nothing validates nothing, so a broken case can sit in the suite looking fine until the day the gate picks it. To check a case you just wrote, select it: `claude plugin eval . --trust-plugin --ablation none --case '<id>' --max-cost-usd 0.02`. It loads, warns about what cannot pass, prints the deterministic graders, and stops on the ceiling for about twenty cents.
+
 Prefer deterministic graders. Every `llm` grader is named in the case's `case.meta.md`, so the drift risk stays visible.
 
+### A judge over a long file votes noise
+On a 36,285-character plan, three judges voted FAIL on a run that had done nothing wrong — and the runner said so itself in the grader's own explanation: *"long file (36285 chars); llm judges are noisy on long inputs, prefer a regex grader for large artifacts"*. Same family as the trace trap below: **the bigger the input, the less a judge is reading it.** For a large artifact, assert the two or three things that actually distinguish a good run with `regex`, and write the rest down as a named hand-check in the case's `case.meta.md`.
+
 ### What the eval sandbox does not have
-`node` and `npm` are **not installed** in the run's sandbox. A case cannot expect `scripts/*.mjs` or `npm test` to run there; a good run applies the logic by hand and says so, and the criteria must accept that. Found on 2026-09-13 when a run that did everything right was failed by a judge demanding the resolver's printed summary.
+`node` and `npm` are **not installed** in the run's sandbox — more precisely, `node`, `npm` and `npx` on `PATH` are symlinks into a directory the sandbox cannot read, so they resolve as broken, and no `bun` or `deno` either (a run reported this itself on 13/09). A case cannot expect `scripts/*.mjs` or `npm test` to run there; a good run applies the logic by hand and says so, and the criteria must accept that. Found on 2026-09-13 when a run that did everything right was failed by a judge demanding the resolver's printed summary.
 
 ### 🩸 The false green, 2026-09-13
 The first port of `0002` scored **1.00** and proved nothing: `scaffold_script` had been written as an inline command under `execution:`, which the loader silently ignored, so the agent ran in an **empty workspace**. "No file under `src/` changed" was vacuously true and the judge passed a run that had nothing to do. The lesson is in the suite now: a case whose fixture matters carries a `file_exists` grader for something the fixture makes possible, so an empty workspace fails loudly instead of passing quietly.

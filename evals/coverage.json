@@ -55,6 +55,9 @@
     "0007-council-seats-by-trigger",
     "0008-council-all-agree"
   ],
+  "scripts/retro.mjs": {
+    "tests": "tests/retro.test.mjs"
+  },
   "skills/adoption-filter/SKILL.md": {
     "uncovered": "reached from an intent sweep; no case sweeps",
     "since": "2026-09-13"
@@ -66,10 +69,9 @@
   "skills/build/SKILL.md": [
     "0005-spec-exists-no-research"
   ],
-  "skills/deploy/SKILL.md": {
-    "uncovered": "case 0009 (publish without a gate run) is planned for 0.6.0",
-    "since": "2026-09-13"
-  },
+  "skills/deploy/SKILL.md": [
+    "0009-publish-without-gate"
+  ],
   "skills/evolve/SKILL.md": {
     "uncovered": "the stage's own triggers are exercised by the weekly routine, not by a case",
     "since": "2026-09-13"
@@ -119,10 +121,9 @@
     "uncovered": "bundled copy; reached only from a build",
     "since": "2026-09-13"
   },
-  "skills/test/SKILL.md": {
-    "uncovered": "case 0010 (a closing cycle writes its retro) is planned for 0.6.0",
-    "since": "2026-09-13"
-  },
+  "skills/test/SKILL.md": [
+    "0010-cycle-close-writes-retro"
+  ],
   "skills/using-cycle/SKILL.md": [
     "0001-route-to-spec",
     "0002-plan-without-intent",

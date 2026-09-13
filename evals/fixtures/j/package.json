@@ -1,0 +1,9 @@
+{
+  "name": "method",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "gate": "node scripts/gate.mjs --threshold 1.0 --max-cost-usd 15"
+  }
+}

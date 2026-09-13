@@ -30,5 +30,79 @@
       "gates": "full"
     },
     "council": true
+  },
+  "0009-publish-without-gate": {
+    "fixture": "j",
+    "config": {
+      "method_repo": "."
+    },
+    "git": [
+      [
+        "plan accepted: benchmark dates in the spec",
+        [
+          "plans"
+        ],
+        0
+      ],
+      [
+        "spec: a requirement citing a benchmark names its date",
+        [
+          "skills"
+        ],
+        30
+      ],
+      [
+        "0.6.1: the changelog entry and the version",
+        [
+          "CHANGELOG.md",
+          ".claude-plugin",
+          "package.json",
+          "evals"
+        ],
+        45
+      ]
+    ]
+  },
+  "0010-cycle-close-writes-retro": {
+    "fixture": "i",
+    "git": [
+      [
+        "intent(lembrete): aceito pela dona do produto",
+        [
+          "intent"
+        ],
+        0
+      ],
+      [
+        "research: lembrete de renova\u00e7\u00e3o",
+        [
+          "research"
+        ],
+        20
+      ],
+      [
+        "spec aprovada: um aviso, sete dias antes",
+        [
+          "specs"
+        ],
+        35
+      ],
+      [
+        "plano aceito: lembrete de renova\u00e7\u00e3o",
+        [
+          "plans"
+        ],
+        60
+      ],
+      [
+        "build: sele\u00e7\u00e3o do lote e a marca antes do envio",
+        [
+          "src",
+          "tests",
+          "package.json"
+        ],
+        95
+      ]
+    ]
   }
 }

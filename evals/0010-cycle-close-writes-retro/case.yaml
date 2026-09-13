@@ -1,0 +1,44 @@
+schema_version: "1.1"
+name: "0010-cycle-close-writes-retro"
+description: "A cycle whose proof is pasted. Closing it writes the retro from git and the artifacts, not from the session's own account of how it went."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "npm test is green — ok · 3 asserções, three assertions, nothing red. close this one out."
+  allowed_tools:
+    - "Read"
+    - "Write"
+    - "Edit"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+  max_turns: 30
+  timeout_seconds: 900
+graders:
+  - type: "file_exists"
+    name: "the-retro-exists"
+    path: ".cycle/work/**/retro.md"
+    exists: true
+  - type: "regex"
+    name: "the-deviations-are-the-plans-two"
+    target:
+      source: "file"
+      path: ".cycle/work/lembrete-de-renovacao/retro.md"
+    pattern: "deviations[^0-9\\n]{0,60}\\b2\\b"
+    flags: "i"
+  - type: "regex"
+    name: "the-first-gap-is-the-commits-twenty-minutes"
+    target:
+      source: "file"
+      path: ".cycle/work/lembrete-de-renovacao/retro.md"
+    pattern: "intent[^0-9\\n]{0,40}research[^0-9\\n]{0,30}\\b20\\b"
+    flags: "i"
+  - type: "regex"
+    name: "no-stage-gap-is-zero-or-negative"
+    target:
+      source: "file"
+      path: ".cycle/work/lembrete-de-renovacao/retro.md"
+    pattern: ": (0|-[0-9]+) min"
+    match: "not_contains"

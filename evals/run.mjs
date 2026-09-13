@@ -6,6 +6,7 @@
 // .cycle/ (config, gate, optionally council), and the CLAUDE.md block /cycle:init writes.
 // Assembly options per case live in evals/fixtures.json, so the case.yaml stays about the task.
 import { readFileSync, writeFileSync, existsSync, mkdirSync, cpSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -42,4 +43,31 @@ const block = readFileSync(join(root, 'templates', 'claude-md-block.md'), 'utf8'
 const claudeMd = join(out, 'CLAUDE.md');
 writeFileSync(claudeMd, (existsSync(claudeMd) ? readFileSync(claudeMd, 'utf8') + '\n' : '') + block);
 
-console.log(`assembled ${id} from fixture ${c.fixture} into ${out}${c.council ? ' (with council.json)' : ''}`);
+// Some cases need a HISTORY, not just files: the retro reads git, and a publish case has to be able
+// to show that nothing was tagged. `git` in fixtures.json is a list of [message, paths, minutes]
+// committed in order from a fixed start, so the numbers a case asserts never depend on the clock.
+if (c.git) {
+  const git = (...a) => execFileSync('git', a, { cwd: out, stdio: 'pipe', env: { ...process.env,
+    GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1',
+    GIT_AUTHOR_NAME: 'fixture', GIT_AUTHOR_EMAIL: 'fixture@example.com',
+    GIT_COMMITTER_NAME: 'fixture', GIT_COMMITTER_EMAIL: 'fixture@example.com' } });
+  git('init', '-q', '-b', 'main');
+  const base = Date.UTC(2026, 8, 10, 9, 0, 0);
+  for (const [message, paths, minutes] of c.git) {
+    for (const p of paths) git('add', '--', p);
+    const when = new Date(base + minutes * 60000).toISOString();
+    execFileSync('git', ['commit', '-q', '-m', message], { cwd: out, stdio: 'pipe', env: { ...process.env,
+      GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1',
+      GIT_AUTHOR_NAME: 'fixture', GIT_AUTHOR_EMAIL: 'fixture@example.com',
+      GIT_COMMITTER_NAME: 'fixture', GIT_COMMITTER_EMAIL: 'fixture@example.com',
+      GIT_AUTHOR_DATE: when, GIT_COMMITTER_DATE: when } });
+  }
+  git('add', '-A');
+  execFileSync('git', ['commit', '-q', '-m', 'the rest of the tree'], { cwd: out, stdio: 'pipe', env: { ...process.env,
+    GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1',
+    GIT_AUTHOR_NAME: 'fixture', GIT_AUTHOR_EMAIL: 'fixture@example.com',
+    GIT_COMMITTER_NAME: 'fixture', GIT_COMMITTER_EMAIL: 'fixture@example.com',
+    GIT_AUTHOR_DATE: new Date(base + 400 * 60000).toISOString(), GIT_COMMITTER_DATE: new Date(base + 400 * 60000).toISOString() } });
+}
+
+console.log(`assembled ${id} from fixture ${c.fixture} into ${out}${c.council ? ' (with council.json)' : ''}${c.git ? ' (with a git history)' : ''}`);

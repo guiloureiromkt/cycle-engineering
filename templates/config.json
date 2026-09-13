@@ -1,6 +1,7 @@
 {
   "gates": "lite",
   "stateful": false,
+  "method_repo": null,
   "protected_branches": [
     "main"
   ],

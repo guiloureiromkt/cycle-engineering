@@ -1,0 +1,6 @@
+{
+  "name": "method",
+  "description": "The method this team builds with. Changing a skill here changes how every other repo is judged.",
+  "version": "0.6.1",
+  "skills": ["./skills/spec"]
+}

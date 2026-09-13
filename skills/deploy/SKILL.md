@@ -15,6 +15,10 @@ The agent does everything up to the production gate and nothing past it. Review 
 5. **A human approves** through branch protection. A finding neither approves nor blocks on its own.
 6. **Deploy per environment.** Dev: free. Staging: the agent publishes. Production: the agent prepares, the human authorizes.
 
+## Before the PR
+- **The retro, if `cycle:test` did not write it.** `node <plugin root>/scripts/retro.mjs <intent>` → `.cycle/work/<intent>/retro.md`. A cycle that ships without one leaves nothing for `cycle:evolve` to read next week.
+- **The method repo publishes only behind its own gate.** If `.cycle/config.json` has `method_repo: "."`, this repository *is* the method: a changed skill changes what every other repo is judged by. Publishing requires the output of `npm run gate` pasted in this session, green, from the commit being published. No gate run, no publish — and an agent does not lower the threshold or raise the cost ceiling to get one (those numbers are the owner's, `docs/CONTRACT.md`).
+
 ## The production gate (plugin hook)
 A command that looks like a production deploy is blocked (exit 2) unless `RELEASE_APPROVAL` is set in the session or `.cycle/release-approval` carries today's date.
 

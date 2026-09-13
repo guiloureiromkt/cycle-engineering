@@ -153,3 +153,19 @@ test("gate: a method file DELETED since the base is not demanded of the coverage
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.doesNotMatch(r.stdout + r.stderr, /mapped by nothing/);
 });
+
+test("gate: two selected cases mean two runner invocations, one case each (a repeated --case keeps only the last)", () => {
+  const d = repoWithBase();
+  write(d, "skills/using-cycle/SKILL.md", "# router, changed\n");
+  git(d, "add", "."); git(d, "commit", "-q", "-m", "router");
+  write(d, "agents/council.md", "# council, changed\n");
+  git(d, "add", "."); git(d, "commit", "-q", "-m", "council");
+  const log = join(d, "invocations.txt");
+  const r = run(d, [], { CYCLE_GATE_EVAL_CMD: `echo "$CYCLE_GATE_CASE" >> ${log}` });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const lines = readFileSync(log, "utf8").trim().split("\n");
+  assert.equal(lines.length, 2, `expected one invocation per case, got:\n${lines.join("\n")}`);
+  assert.match(lines[0] + lines[1], /0001-route-to-spec/);
+  assert.match(lines[0] + lines[1], /0007-council-seats-by-trigger/);
+  for (const l of lines) assert.equal(l.trim().split(/\s+/).length, 1, `one case per invocation: ${l}`);
+});

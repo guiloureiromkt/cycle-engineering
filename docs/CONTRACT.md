@@ -28,7 +28,7 @@ Statuses: intent `draft|accepted|closed` · research `draft|done` · spec `draft
 
 ## Config (`.cycle/config.json`)
 ```json
-{ "gates": "lite", "stateful": false, "protected_branches": ["main"],
+{ "gates": "lite", "stateful": false, "method_repo": null, "protected_branches": ["main"],
   "models": { "advocate": "inherit", "council": "sonnet", "verifier": "sonnet", "sweeps": "haiku", "research": "inherit", "critic": "inherit", "joker": "sonnet" },
   "knowledge": [] }
 ```
@@ -36,6 +36,7 @@ Statuses: intent `draft|accepted|closed` · research `draft|done` · spec `draft
 - `models`: passed as the `model` argument when dispatching agents. `sweeps` is the cheap pass-1 of `cycle:intent`; `research` is the stage-2 researcher. Missing `models.sweeps` = `haiku`; missing `models.research` = `inherit`.
 - `knowledge`: list of `{name, kind: notebooklm | vault | folder | url, id, areas: []}` the research stage queries when `areas` match the intent. Missing key = empty list. The main session's model is the user's choice; the plugin never changes it.
 - `stateful: true` makes production deploy require a restore test newer than 30 days (`.cycle/work/<intent>/restore-test.md`).
+- `method_repo`: `null` in every product repo; `"."` only in the repository that holds the cycle itself. Two things read it: the weekly routine (`docs/routines/weekly-evolve.md`) opens there, and `cycle:deploy` refuses to publish a repo whose `method_repo` is `"."` without a gate run pasted in the session — because there, a skill edit is a change to the method everything else is judged by.
 - `.cycle/gate.json`: `{ "patterns": [] }` — repo-specific deploy commands, lowercase substring match.
 
 ## Council seats (`.cycle/council.json`, template in `templates/`)
@@ -51,6 +52,14 @@ Statuses: intent `draft|accepted|closed` · research `draft|done` · spec `draft
 - Exit 2 from the runner (the cost ceiling was hit, paid graders may have been skipped) is a **failure**, distinct from exit 1 (a case scored below the threshold).
 - `--threshold` and `--max-cost-usd` live in `package.json`'s `gate` script. They are the owner's numbers: an agent may propose a change in an intent, never make one as a side effect.
 - Three run shapes: **gate** (one run per case, no ablation, only what changed), **baseline** (`--ablation with-without` on a changed skill's case, which is the RED→GREEN the CONTRIBUTING asks for), **full** (`npm run evals:full`, three runs with the ablation arm, weekly and before a minor tag).
+
+## The weekly routine (`docs/routines/weekly-evolve.md`)
+That file is the definition, not a description of one: the prompt, the working directory, the tool list with a reason per forbidden command, what it reads, what it writes, the "did not complete" artifact written **before** the work starts, and the rule that a weekly full run and a pre-tag full run never both fire in the same week (`evals/results/cost-log.md` is how it knows). The routine proposes — a branch for a docs fix, an intent for everything else — and never merges.
+
+## "The owner" is a role, and it needs a second person
+Everything outward-facing in this method waits on one sentence from a human: the intent's acceptance, the spec's approval, the plan's acceptance, `.cycle/release-approval`, the publish itself, the triage order, and the gate's threshold and cost ceiling. Today that human is one person. If he is away for two weeks, nothing breaks and nothing ships — the cycle simply stops at every gate, which is the failure mode of a method that works.
+
+So the role is named here, separate from the person: **the owner** accepts intents and plans, approves specs, writes the release approval, orders the triage, and sets the gate's numbers. A repository using this method names its owner and **one designated backup** in its own `CLAUDE.md`, with the backup's authority stated plainly — usually everything except a production release. An agent never fills either slot, never writes an acceptance in someone's name, and never reads "the owner would have said yes" into a silence.
 
 ## Hooks (Node, via `hooks/run.sh`)
 - Every gate checks `.cycle/` first (`cycleOn`): no `.cycle/`, no gate, no exception. Opt-out = the HUMAN deletes `.cycle/` in their own terminal.

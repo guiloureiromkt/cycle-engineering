@@ -7,7 +7,8 @@
 //
 // The threshold and the ceiling are the owner's numbers: they are read from argv and printed,
 // never computed, never adjusted by a failing run.
-import { readFileSync, existsSync, writeFileSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,11 +102,31 @@ if (!cases.length) {
 
 // 7 · The eval run, bounded.
 console.log(`\ngate: base ${base} · changed ${changed.length} method file(s) · cases ${cases.join(', ')} · threshold ${threshold} · ceiling $${maxCost}`);
-const caseArgs = cases.map(c => `--case '${c}*'`).join(' ');
-const cmd = evalCmd ?? `claude plugin eval . --scaffold --allow-tools Bash Write Edit --ablation none --runs 1 --trust-plugin --no-publish --threshold ${threshold} --max-cost-usd ${maxCost} ${caseArgs}`;
-const e = sh(cmd, { stdio: ['ignore', 'inherit', 'inherit'] });
-if (e.status === 2) fail(`the eval run hit the $${maxCost} budget ceiling and stopped: paid graders may have been skipped, so this is not a pass. Raise the ceiling deliberately or narrow the case selection.`, { base, changed, cases, evalExit: 2 });
-if (e.status !== 0) fail(`a case scored below the threshold ${threshold} — a regression, not a budget problem.`, { base, changed, cases, evalExit: e.status });
+// ONE case per invocation, on purpose: `--case` takes a single glob and a repeated flag keeps only
+// the last, so a gate that passes `--case a --case b` scores b and reports both. That is how this
+// gate scored one of two cases on 2026-09-13 and would have called the publish green.
+// The ceiling is the whole gate's, not each case's: what a run spends is subtracted from the next.
+let spent = 0;
+for (const c of cases) {
+  const remaining = +(maxCost - spent).toFixed(2);
+  if (remaining <= 0) fail(`the $${maxCost} ceiling ran out before case ${c} was scored. Cases left: ${cases.slice(cases.indexOf(c)).join(', ')}.`, { base, changed, cases, spent });
+  const out = join(tmpdir(), `cycle-gate-${Date.now()}-${c}.json`);
+  const cmd = evalCmd ?? `claude plugin eval . --scaffold --allow-tools Bash Write Edit --ablation none --runs 1 --trust-plugin --no-publish --threshold ${threshold} --max-cost-usd ${remaining} --case '${c}' --json ${out}`;
+  // CYCLE_GATE_CASE lets a stubbed runner record WHICH case it was asked for, without the stub
+  // having to survive an appended flag.
+  const e = sh(cmd, { stdio: ['ignore', 'inherit', 'inherit'], env: { ...process.env, CYCLE_GATE_CASE: c } });
+  if (existsSync(out)) {
+    try {
+      const j = JSON.parse(readFileSync(out, 'utf8'));
+      spent += j.costUsd ?? 0;
+      if (j.partial) fail(`case ${c} ended partial (${j.partialReason ?? 'unknown'}): a partial run is not a pass.`, { base, changed, cases, case: c, spent });
+    } catch { /* the runner wrote nothing readable; the exit code below still decides */ }
+    rmSync(out, { force: true });
+  }
+  if (e.status === 2) fail(`case ${c} hit the $${remaining} budget ceiling and stopped: paid graders may have been skipped, so this is not a pass. Raise the ceiling deliberately or narrow the case selection.`, { base, changed, cases, case: c, evalExit: 2 });
+  if (e.status !== 0) fail(`case ${c} scored below the threshold ${threshold} — a regression, not a budget problem.`, { base, changed, cases, case: c, evalExit: e.status });
+}
+if (spent) console.log(`\ngate: US$${spent.toFixed(2)} of the $${maxCost} ceiling.`);
 
 console.log(`\n✓ gate: ${cases.length} case(s) at or above ${threshold}, base ${base}.`);
 report({ ok: true, base, changed, cases, debt, byTests, mixedCommits, scored: true, evalExit: 0 });

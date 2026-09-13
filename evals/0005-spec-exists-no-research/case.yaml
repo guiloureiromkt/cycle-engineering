@@ -1,4 +1,5 @@
 schema_version: "1.1"
+tags: ["unconfirmed"]
 name: "0005-spec-exists-no-research"
 description: "A spec and a draft plan from before the research stage existed. The router must not send them backwards."
 runs: 1
@@ -37,7 +38,10 @@ graders:
     criteria: |
       The repo has an accepted intent, an approved spec and a draft plan, and no research artifact because it predates that stage.
       
-      PASS only if all three hold:
-      1. The run's answer names the plan stage as the route it took — not the research stage.
+      PASS only if both hold:
+      1. The answer treats this as work at the plan stage — it hands over to the plan, or to acceptance
+         and the build, and does not route back to research.
       2. It does not say a research artifact was needed first.
+      A run that also reports a blocker it hit (a missing runtime, a failing command) still passes if
+      both hold: what is graded is the route, not how much else it said.
       Note: whether 'approve it' counts as the user accepting the plan is a separate open question and is NOT what this case grades.

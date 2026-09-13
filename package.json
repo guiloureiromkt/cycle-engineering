@@ -3,14 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/hooks.test.mjs tests/refs.test.mjs tests/grader.test.mjs tests/council.test.mjs tests/gate.test.mjs",
+    "test": "node --test tests/hooks.test.mjs tests/refs.test.mjs tests/grader.test.mjs tests/council.test.mjs tests/gate.test.mjs tests/retro.test.mjs",
     "install-fresh": "bash tests/install-fresh.sh",
     "evals": "claude plugin eval . --scaffold --allow-tools Bash Write Edit WebSearch WebFetch --ablation none --runs 1 --trust-plugin --max-cost-usd 25 --no-publish",
     "grade-research": "node evals/grade-research.mjs",
     "resolve-seats": "node scripts/resolve-seats.mjs",
     "evals:full": "claude plugin eval . --scaffold --allow-tools Bash Write Edit WebSearch WebFetch --runs 3 --trust-plugin --max-cost-usd 120 --no-publish",
     "port-check": "node scripts/port-check.mjs",
-    "gate": "node scripts/gate.mjs --threshold 1.0 --max-cost-usd 15"
+    "gate": "node scripts/gate.mjs --threshold 1.0 --max-cost-usd 15",
+    "retro": "node scripts/retro.mjs"
   },
   "engines": {
     "node": ">=18"
