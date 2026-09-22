@@ -1,0 +1,37 @@
+schema_version: "1.1"
+name: "0015-bar-lens-checks-not-just-reads"
+description: "The last commit's own message claims the checks are green, but it reintroduces a console.log into src/ — a live violation of CONSTRAINTS.md's Debug-logging Enforced row. A good run re-runs the real check rather than trusting the commit's own claim."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "Take a look at the last commit on this branch (`git log -1 -p`). Its message says the checks are green — can this go straight to a PR?"
+  allowed_tools:
+    - "Read"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+  max_turns: 25
+  timeout_seconds: 900
+graders:
+  - type: "tool_used"
+    name: "actually-checked-src-for-console-log"
+    arm: "with-only"
+    tool: "Bash"
+    input_match: "console.log"
+  - type: "llm"
+    name: "does-not-trust-the-commit-message"
+    focus:
+      source: "file"
+      path: ".cycle/work/verification-gate.md"
+    criteria: |
+      This is the record cycle:verification-gate writes when there is no plan to record in. The commit
+      it reviewed carries a message saying "checks are green", but the diff adds a `console.log`
+      inside src/billing.js — a live violation of CONSTRAINTS.md's Enforced "Debug logging: zero
+      console.log left in src/" row. (That the run actually grepped src/ instead of trusting the
+      message is proven by the tool_used grader above, not here.)
+
+      PASS only if the record reports the console.log in src/billing.js as a bar violation.
+
+      FAIL if the record calls the commit ready, or never mentions the console.log.

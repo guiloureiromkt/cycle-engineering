@@ -1,9 +1,10 @@
 // cycle-engineering · production gate (PreToolUse on Bash, dispatched by pre-bash.mjs).
 // Blocks a command that looks like a production deploy unless a human left a release approval.
+// The repo judged is the one the COMMAND acts on, falling back to the session's own (see _lib.gateRepo).
 import { join } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
-import { root, today, readJson, cycleOn, isMain, main } from "./_lib.mjs";
+import { root, today, readJson, gateRepo, repoFor, isMain, main } from "./_lib.mjs";
 
 // Conservative defaults: only explicit production markers (contract). Matched on the lowercased command.
 export const DEFAULTS = [
@@ -13,14 +14,14 @@ export const DEFAULTS = [
   /wrangler deploy/, /fly deploy/, /railway up/,
 ];
 
-function currentBranch() {
+function currentBranch(repo) {
   try {
-    return execSync("git rev-parse --abbrev-ref HEAD", { cwd: root(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim().toLowerCase() || null;
+    return execSync("git rev-parse --abbrev-ref HEAD", { cwd: repo, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim().toLowerCase() || null;
   } catch { return null; }   // git missing or not a repo → cannot resolve → allow
 }
 
 /** Branch a `git push` lands on (lowercase), or null when it is not a push or pushes only tags. */
-export function pushTarget(cmd) {
+export function pushTarget(cmd, repo) {
   const m = cmd.match(/\bgit\s+push\b([^&|;]*)/);
   if (!m) return null;
   const args = m[1].trim().split(/\s+/).filter(Boolean);
@@ -29,37 +30,53 @@ export function pushTarget(cmd) {
   const refspec = positional[1];                       // positional[0] is the remote
   if (refspec) {
     const dst = refspec.split(":").pop().replace(/^\+/, "").replace(/^refs\/heads\//, "");
-    return dst === "head" ? currentBranch() : dst;     // cmd is lowercased, so HEAD arrives as head
+    return dst === "head" ? currentBranch(repo) : dst; // cmd is lowercased, so HEAD arrives as head
   }
-  return currentBranch();                              // bare `git push` → the current branch
+  return currentBranch(repo);                          // bare `git push` → the current branch
 }
 
 export function run(input) {
   const raw = String(input?.tool_input?.command || "");
   const cmd = raw.toLowerCase();
-  if (!cmd || !cycleOn()) return { block: null };
+  const repo = gateRepo(input);
+  if (!cmd || !repo) return { block: null };
 
-  const cfg = readJson(join(root(), ".cycle/config.json"), {});
-  const gate = readJson(join(root(), ".cycle/gate.json"), {});
+  const cfg = readJson(join(repo, ".cycle/config.json"), {});
+  const gate = readJson(join(repo, ".cycle/gate.json"), {});
   const protectedBranches = (Array.isArray(cfg?.protected_branches) ? cfg.protected_branches : ["main"]).map(b => String(b).toLowerCase());
   const patterns = (Array.isArray(gate?.patterns) ? gate.patterns : []).map(p => String(p).toLowerCase()).filter(Boolean);
 
   let hit = DEFAULTS.find(r => r.test(cmd))?.source ?? null;
   if (!hit) { const p = patterns.find(p => cmd.includes(p)); if (p) hit = `gate.json pattern "${p}"`; }
-  if (!hit) { const t = pushTarget(cmd); if (t && protectedBranches.includes(t)) hit = `push to protected branch ${t}`; }
+  if (!hit) { const t = pushTarget(cmd, repo); if (t && protectedBranches.includes(t)) hit = `push to protected branch ${t}`; }
   if (!hit) return { block: null };
 
-  if (process.env.RELEASE_APPROVAL) return { block: null };
-  const f = join(root(), ".cycle/release-approval");
+  // The session's own repo, used twice below: to scope the env var, and to explain a first-time block.
+  const sessionRepo = repoFor(root());
+  const sameRepo = sessionRepo && sessionRepo === repo;
+
+  if (process.env.RELEASE_APPROVAL && sameRepo) return { block: null };
+  const f = join(repo, ".cycle/release-approval");
   if (existsSync(f)) {
     try { if (readFileSync(f, "utf8").includes(today())) return { block: null }; } catch { /* unreadable → treated as absent */ }
   }
+
+  // Two clauses the council asked for: a scope miss must not read like "no approval", and the first
+  // block in a repo that used to be silently ungated must not read like a regression.
+  const scopeMiss = process.env.RELEASE_APPROVAL && !sameRepo
+    ? `\nRELEASE_APPROVAL is set, but it was approved elsewhere in this session, not here: it covers ${sessionRepo || "the session's own repo"}, and this command acts on ${repo}.`
+    : "";
+  const firstTime = !sameRepo
+    ? `\nThis repository was not gated from this session before; it is now. A session no longer has to start inside a repository for its gates to run.`
+    : "";
+
   return { block: `cycle · PRODUCTION GATE: this command looks like a production deploy (matched: ${hit}) and there is no release approval.
 Command: ${raw}
+Repository judged: ${repo}${scopeMiss}${firstTime}
 A human (not the agent) does ONE of:
-  1. export RELEASE_APPROVAL="<name> <reason>" in the session, or
-  2. write .cycle/release-approval with "<name> · ${today()} · <what is being released>".
-Then run the command again. The agent never creates this file or variable. Repo-specific deploy commands go in .cycle/gate.json "patterns".` };
+  1. export RELEASE_APPROVAL="<name> <reason>" in a session rooted in that repository, or
+  2. write ${f} with "<name> · ${today()} · <what is being released>".
+Then run the command again. The agent never creates this file or variable. Repo-specific deploy commands go in ${join(repo, ".cycle/gate.json")} "patterns".` };
 }
 
 if (isMain(import.meta.url)) main(run);

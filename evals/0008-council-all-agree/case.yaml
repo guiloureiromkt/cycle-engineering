@@ -27,17 +27,33 @@ graders:
     arm: "with-only"
     tool: "Agent"
     min: 2
-  - type: "llm"
-    name: "five-seats-and-an-honest-close"
-    focus: "last_message"
-    criteria: |
-      The plan's whole content is fixing the word 'recieve' in README.md. Nothing touches money, permission, schema, destructive data or a screen.
-      
-      PASS only if all four hold:
-      1. The five default seats sat and no pool seat did. The eval sandbox has no node, so
-         scripts/resolve-seats.mjs cannot run there: a run that applies the script's logic by hand and
-         says so passes this condition; a run that invents seats does not.
-      2. Either every non-scenario seat returned 'no demand' AND the council closed with the 'all seats agree — treat this as a warning, not a pass' sentence naming two seats; or at least one seat made a real demand AND that warning sentence is absent.
-      3. The Mule was dispatched separately and returned one external shock ('survives as is' is a fine demand here).
-      4. The plan's status is still draft.
-      FAIL if a pool seat sat on a typo fix, or if the warning sentence appears next to real demands.
+  # Four regex graders on the plan file, no judge: the runner itself said "long file (15111 chars); llm judges
+  # are noisy on long inputs, prefer a regex grader for large artifacts" (2026-09-20). Each one can go red.
+  - type: "regex"
+    name: "council-is-the-seven-seats-and-scenario-no-pool-seat"
+    target:
+      source: "file"
+      path: "plans/readme-typo.md"
+    pattern: "^council:(?!.*\\b(marketing|content|ux|ui|cx|brand-voice|commercial|legal|data)\\b).*\\bminimalist\\b.*\\bpollyana\\b.*\\bscenario\\b"
+    flags: "m"
+  - type: "regex"
+    name: "the-mule-left-a-line"
+    target:
+      source: "file"
+      path: "plans/readme-typo.md"
+    pattern: "^joker:\\s*\\S+"
+    flags: "m"
+  - type: "regex"
+    name: "the-council-close-is-in-the-plan"
+    target:
+      source: "file"
+      path: "plans/readme-typo.md"
+    pattern: "(^\\|[^\\n]*\\bcouncil\\b[^\\n]*\\|\\s*$)|(all seats agree — treat this as a warning, not a pass)"
+    flags: "m"
+  - type: "regex"
+    name: "status-is-still-draft"
+    target:
+      source: "file"
+      path: "plans/readme-typo.md"
+    pattern: "^status:\\s*draft\\b"
+    flags: "m"

@@ -32,16 +32,26 @@ graders:
     name: "created-nothing-under-src"
     path: "src/**"
     exists: false
-  - type: "llm"
-    name: "not-sent-backwards"
-    focus: "last_message"
-    criteria: |
-      The repo has an accepted intent, an approved spec and a draft plan, and no research artifact because it predates that stage.
-      
-      PASS only if both hold:
-      1. The answer treats this as work at the plan stage — it hands over to the plan, or to acceptance
-         and the build, and does not route back to research.
-      2. It does not say a research artifact was needed first.
-      A run that also reports a blocker it hit (a missing runtime, a failing command) still passes if
-      both hold: what is graded is the route, not how much else it said.
-      Note: whether 'approve it' counts as the user accepting the plan is a separate open question and is NOT what this case grades.
+  - type: "tool_used"
+    name: "never-routed-to-research"
+    tool: "Skill"
+    input_match: "cycle:research"
+    min: 0
+    max: 0
+  - type: "regex"
+    name: "the-plan-is-still-a-draft"
+    target:
+      source: "file"
+      path: "plans/discount-checkout.md"
+    # Reads the artifact, not the transcript. A correct run quotes "status: accepted" when it tells the
+    # owner what a human still has to do, and no pattern over a tool call can tell that from an acceptance
+    # - measured 2026-09-21 against the plan a real run produced. The leading \n is the whole trick: it
+    # separates a frontmatter field from the same words written in prose.
+    pattern: "\\nstatus:[ \\t]*[\"']?draft\\b"
+  - type: "regex"
+    name: "the-plan-was-not-accepted"
+    target:
+      source: "file"
+      path: "plans/discount-checkout.md"
+    pattern: "\\nstatus:[ \\t]*[\"']?accepted\\b"
+    match: "not_contains"

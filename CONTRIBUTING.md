@@ -43,3 +43,29 @@ Two prerequisites, and a rule.
 
 A change to `skills/`, `agents/` or `hooks/` may not ride in the same commit as a change under `evals/`. `npm run gate` fails and names any commit that does. It is the plainest form of a rule the literature is blunt about: when the verifier evolves with the system, the cheapest way to pass is to make the test easier. Propose cases freely; never let a change grade itself with a case it wrote.
 
+
+### When the case itself is the defect
+
+The rule above assumes the test is right. Sometimes it is not: a case can fail a run that did everything
+asked of it, and then the case is what has to change. That is the one exception, and it is narrow.
+
+**The justification must be a kept artifact from a run** — a trace, a graded file, the workspace held with
+`--keep-temp` — **never an argument.** "This grader is too strict" is not evidence. "Here are the ten
+edits that run made, and none of them is the thing the grader claims" is.
+
+**The claim may be no wider than the artifact supports.** On 2026-09-21 a case was changed on the strength
+of a trace showing that *no `Edit` or `Write` in that run accepted the plan*. The first three drafts of
+that cycle said *"the run was correct"* instead, and the same trace refutes it: the run also executed host
+code from inside its sandbox. The narrow claim was enough; the wide one was false.
+
+**A replacement is not trusted until it has been shown failing.** Build a throwaway case that commits the
+violation on purpose, run it, and keep the result in the case's `case.meta.md`. A grader that has only
+ever been seen passing is a grader nobody has tested. Two instruments in that same cycle returned green
+for a pattern that matched nothing, which is how this was learned.
+
+**An offline matrix is calibration, not proof.** A test that reimplements the runner's matching in
+JavaScript never calls the runner. Record the CLI version it was calibrated against and re-validate it
+against one live case load when that version changes.
+
+Three designs died at the gates in that cycle, two of them on measurements that contradicted the design's
+own headline number. If a fourth is needed, that is the process working, not a reason to skip it.

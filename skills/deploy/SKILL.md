@@ -32,6 +32,8 @@ If `.cycle/config.json` has `stateful: true`, a production deploy requires a res
 ## Rollback is the most rehearsed path
 Before the first deploy through the cycle, a rollback command exists, is in `CLAUDE.md`, and has run in staging. `cycle:maintain` depends on it.
 
+If this deploy has stages (flags, canary, gradual traffic), see `references/staged-rollout.md` before the first stage goes live. If it does not, this paragraph does not apply.
+
 ## Common mistakes
 - Rewriting the command to escape the hook ("same deploy, just without the word").
 - Confirming a deploy by the artifact instead of the process (a stale build file looks identical to the new one). Wait for the process to finish and check inside the container.

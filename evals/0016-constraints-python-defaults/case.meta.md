@@ -1,0 +1,9 @@
+# 0016-constraints-python-defaults
+
+Provenance: written 2026-09-16 building `plans/constraints-bar.md` step 9. **Not one of the plan's own five enumerated directions** — added because spec `specs/constraints-bar.md` R3's "Verified by" column explicitly demands it: "fixture test: a repo with an existing pytest + ruff setup gets Python-appropriate defaults, not the source skill's JS menu." The plan's step 9 bullet list (R2/R4/R5, true-positive, true-negative, bare-repo, self-referential, drifted-value) never names this direction, even though R3 is a real requirement in the approved spec with its own verification method. Rather than silently skip R3's own bar or silently expand step 9 to six directions without saying so, this case exists and is named here as the discrepancy it is — Gui's call whether the plan should be amended to list it explicitly.
+
+Note: the plan's step 9 also names a **self-referential case** (a diff editing CONSTRAINTS.md's own Enforced table, confirming the Bar lens fires on it too) as one of its five directions. That direction is not separately built as its own case here: `0012-bar-lens-fires-on-weakened-commit`'s diff already edits `CONSTRAINTS.md` itself (the Coverage row) in the same commit as the feature, so its `case.yaml`/scaffold already exercises "touches CONSTRAINTS.md itself" — the Bar lens's trigger rule in `skills/verification-gate/SKILL.md` has two disjuncts ("touches a path matched by an Enforced row's scope, OR touches CONSTRAINTS.md itself") and `0012` satisfies the second disjunct as a side effect of satisfying the first. This is also flagged here rather than assumed: if Gui wants a case that touches *only* CONSTRAINTS.md with no accompanying feature code, that is not yet built.
+
+Verifies: spec `specs/constraints-bar.md` R3.
+
+Not yet run against `claude plugin eval` — see `evals/0011-…/case.meta.md` (real API cost, deferred).

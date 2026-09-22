@@ -24,8 +24,10 @@ Before any destructive command (`reset --hard`, `clean`, `rm -rf` inside the rep
 2. Bug: a test that reproduces it and fails first, committed; then the fix, without touching the test. REQUIRED SUB-SKILL: `cycle:tdd`.
 3. Don't mix two intents in the same tree (dark mode shipped inside a billing change is the classic).
 4. Before any sentence that sounds like "done": REQUIRED SUB-SKILL: `cycle:verify-before-done`, then `cycle:test`.
+5. Report progress to the owner in this repo's output shape (`CLAUDE.md`'s "Output shape" section): numbered steps done so far, one concrete next action, nothing narrated between commits.
 
 ## Options (not rules)
+- After an edit, run the repo's own fast-check script named in `CONSTRAINTS.md`'s "Checked by" column, when one exists (`cycle:constraints`).
 - Parallel slices from the Graph gate can get their own worktree and subagent (`cycle:worktrees`, `cycle:parallel-agents`, `cycle:subagent-driven-development`).
 - Auto mode: only when `CLAUDE.md`, hooks and a test suite exist in the repo.
 - Build hooks: block protected folders, run lint, keep credentials out of the diff. A hook that asks for a human belongs in `cycle:deploy`.

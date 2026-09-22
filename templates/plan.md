@@ -6,11 +6,13 @@ intent: intent/<file>.md
 date: <YYYY-MM-DD>
 accepted_by: <name · date>
 gates: [graph, advocate, pre-mortem, council, loop]   # in lite mode write "council: skipped" when it did not run
-council: [user, maintainer, payer, security, operator, scenario]   # + the pool ids that sat (from scripts/resolve-seats.mjs)
+council: [minimalist, user, maintainer, payer, security, operator, pollyana, scenario]   # + the pool ids that sat (from scripts/resolve-seats.mjs)
 joker: <domain> — <demand or "survives">   # the Mule, dispatched after the risks table was committed
 ---
 
 # Plan: <name> (from the intent of <date>)
+
+**Goal:** <one sentence: what this builds, in the owner's terms>
 
 ## Files that change
 <path (new | modified) — responsibility>

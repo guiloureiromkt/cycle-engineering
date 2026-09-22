@@ -15,6 +15,11 @@
     "uncovered": "no case dispatches the verifier yet; the verification gate runs after a build, and no fixture builds",
     "since": "2026-09-13"
   },
+  "commands/init.md": {
+    "tests": "tests/init-routines.test.mjs",
+    "uncovered": "the init warning (R5) has no eval case: /cycle:init needs the session hook's plugin root, which the sandbox does not provide; a manual smoke test is recorded in evals/0017-routine-keeps-running/case.meta.md",
+    "since": "2026-09-21"
+  },
   "hooks/_lib.mjs": {
     "tests": "tests/hooks.test.mjs"
   },
@@ -69,9 +74,26 @@
   "skills/build/SKILL.md": [
     "0005-spec-exists-no-research"
   ],
+  "skills/constraints/SKILL.md": [
+    "0011-constraints-interview-writes-bar",
+    "0012-bar-lens-fires-on-weakened-commit",
+    "0013-bar-lens-silent-on-unrelated-diff",
+    "0014-bar-routes-bare-repo-no-tooling",
+    "0015-bar-lens-checks-not-just-reads",
+    "0016-constraints-python-defaults"
+  ],
+  "skills/constraints/references/floor-guard.md": {
+    "tests": "tests/refs.test.mjs"
+  },
+  "skills/constraints/references/tool-menu.md": {
+    "tests": "tests/refs.test.mjs"
+  },
   "skills/deploy/SKILL.md": [
     "0009-publish-without-gate"
   ],
+  "skills/deploy/references/staged-rollout.md": {
+    "tests": "tests/refs.test.mjs"
+  },
   "skills/evolve/SKILL.md": {
     "uncovered": "the stage's own triggers are exercised by the weekly routine, not by a case",
     "since": "2026-09-13"
@@ -154,10 +176,16 @@
     "since": "2026-09-13"
   },
   "templates/claude-md-block.md": [
-    "0001-route-to-spec"
+    "0001-route-to-spec",
+    "0017-routine-keeps-running"
   ],
   "templates/config.json": [
     "0001-route-to-spec"
+  ],
+  "templates/constraints.md": [
+    "0011-constraints-interview-writes-bar",
+    "0014-bar-routes-bare-repo-no-tooling",
+    "0016-constraints-python-defaults"
   ],
   "templates/council.json": [
     "0007-council-seats-by-trigger",

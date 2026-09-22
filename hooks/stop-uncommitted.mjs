@@ -15,7 +15,7 @@ export function run(input) {
   try {
     if (existsSync(marker) && Date.now() - statSync(marker).mtimeMs < THROTTLE_MS) return { context: null };
   } catch { /* unreadable marker → treat as absent */ }
-  if (!hasAcceptedPlan()) return { context: null };
+  if (!hasAcceptedPlan(root())) return { context: null };
 
   let dirty = "";
   try { dirty = execSync("git status --porcelain", { cwd: root(), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }

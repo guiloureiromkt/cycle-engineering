@@ -2,7 +2,7 @@
 // A destructive command needs a snapshot recorded in .cycle/work/<intent>/snapshot.md less than 60 minutes old.
 import { join } from "node:path";
 import { existsSync, readdirSync, statSync } from "node:fs";
-import { root, cycleOn, isMain, main } from "./_lib.mjs";
+import { gateRepo, isMain, main } from "./_lib.mjs";
 
 const SNAPSHOT_TTL_MS = 60 * 60 * 1000;
 const RM_EXEMPT = /(^|\/)(node_modules|dist|build|\.next|coverage|\.cache|\.turbo)\/?$/;
@@ -29,7 +29,7 @@ function rmTargetsInsideRepo(cmd, repoRoot) {
 }
 
 /** Name of the destructive pattern matched, or null. */
-export function destructiveMatch(cmd, repoRoot = root()) {
+export function destructiveMatch(cmd, repoRoot) {   // repoRoot is required: a default that resolved to the session is the bug this cycle fixes
   if (/\bgit\s+reset\s+--hard\b/.test(cmd)) return "git reset --hard";
   if (/\bgit\s+clean\s+(-[a-z]*f|--force)/.test(cmd)) return "git clean -f";
   if (/\bgit\s+checkout\s+--\s+\.(\s|$)/.test(cmd)) return "git checkout -- .";
@@ -41,8 +41,8 @@ export function destructiveMatch(cmd, repoRoot = root()) {
   return null;
 }
 
-function freshSnapshotExists() {
-  const work = join(root(), ".cycle/work");
+function freshSnapshotExists(repo) {
+  const work = join(repo, ".cycle/work");
   if (!existsSync(work)) return false;
   try {
     return readdirSync(work, { withFileTypes: true }).some(d => {
@@ -56,13 +56,14 @@ function freshSnapshotExists() {
 export function run(input) {
   const raw = String(input?.tool_input?.command || "");
   const cmd = raw.toLowerCase();
-  if (!cmd || !cycleOn()) return { block: null };
-  const hit = destructiveMatch(cmd);
+  const repo = gateRepo(input);
+  if (!cmd || !repo) return { block: null };
+  const hit = destructiveMatch(cmd, repo);
   if (!hit) return { block: null };
-  if (freshSnapshotExists()) return { block: null };
+  if (freshSnapshotExists(repo)) return { block: null };
   return { block: `cycle · SNAPSHOT GUARD: this command is destructive (matched: ${hit}) and no snapshot newer than 60 minutes exists.
 Command: ${raw}
-Before running it, take a snapshot (git stash -u, a branch, a DB dump) and record it in .cycle/work/<intent>/snapshot.md with what was saved and how to restore (the file's modification time is the clock). Then run the command again.` };
+Before running it, take a snapshot (git stash -u, a branch, a DB dump) and record it in ${join(repo, ".cycle/work")}/<intent>/snapshot.md with what was saved and how to restore (the file's modification time is the clock). Then run the command again.` };
 }
 
 if (isMain(import.meta.url)) main(run);

@@ -14,7 +14,7 @@ O que você recebe: dez skills (uma por etapa, mais o roteador), quatro agentes 
 
 Você precisa do Claude Code instalado e do Node.js 18 ou mais novo (os hooks rodam em Node). Sem o Node, os portões ficam desligados e o início da sessão avisa.
 
-**Abra o Claude Code dentro do repositório.** Os hooks leem a pasta `.cycle/` do diretório onde a sessão começou, não do repositório que o comando toca. Sessão aberta numa pasta acima, ou no seu vault de notas, que edita e publica este repositório roda sem portão nenhum. Foi assim que o autor rodou um ciclo inteiro, com deploy em produção, sem um hook sequer disparar.
+Os hooks seguem o **comando**, não a sessão: eles descobrem o repositório em que o comando age (prefixo `cd`, flag `-C` de `git`/`make`/`env`, um nível de shell aninhado, ou o diretório de trabalho que o host informa), sobem até o `.cycle/` mais próximo e, quando não conseguem resolver, caem de volta no repositório da própria sessão — então uma sessão aberta numa pasta acima, ou no seu vault de notas, ainda é barrada no que manda para dentro de um repositório. A descoberta é um esforço sobre o texto do comando: medida num corpus de 4.592 comandos reais, acerta 91% deles e 73% dos que têm cara de deploy; o resto cai no repositório da sessão em vez de ficar sem portão. **Abrir o Claude Code dentro do repositório continua sendo o único jeito de ter certeza.** Até 19/09/2026 não havia nem descoberta nem queda-de-braço: sessão no vault rodava sem portão nenhum — foi assim que quatro repositórios de produto rodaram ciclos inteiros e doze releases saíram sem um hook sequer disparar.
 
 Escolha um repositório seu e um pedido pequeno de verdade: um botão, uma validação, um texto que muda. Não estreie com o pedido grande.
 
@@ -86,6 +86,7 @@ Deploy e manutenção ficam pra depois do primeiro ciclo. Quando chegar lá: o p
 ## O que você vai ver de diferente
 
 - O agente se recusa a editar código sem plano aceito. Se você disser "faz direto, sem perguntas", ele abre a spec em vez de programar.
+- O ciclo governa construção, não operação: uma rotina que o repositório roda (cron, Actions, loop agendado) escrevendo as próprias saídas não precisa de plano; rotina que precisa da `main` abre um pull request (uma mudança que alguém revisa antes de entrar). O `.cycle/` fica no repositório que você constrói, ao lado das rotinas, nunca acima delas; o `/cycle:init` avisa quando encontra rotinas na pasta em que foi chamado.
 - Comandos destrutivos (`git reset --hard`, `rm -rf` dentro do repositório, `drop table`) param se não houver uma nota de snapshot da última hora em `.cycle/work/`.
 - Se você fechar a sessão com plano aceito e código sem commit, ele avisa. Uma vez a cada meia hora, não a cada mensagem.
 - Tudo o que o agente decidiu está em arquivo, no git. Dá pra ler, dá pra discordar, dá pra voltar.

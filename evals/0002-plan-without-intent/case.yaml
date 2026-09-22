@@ -26,14 +26,14 @@ graders:
     name: "created-nothing-under-src"
     path: "src/**"
     exists: false
-  - type: "llm"
-    name: "routed-backwards-not-forwards"
-    focus: "trace"
-    criteria: |
-      plan-cobranca.md sits in the repo root, outside plans/ and without frontmatter, and the change is about billing.
-      
-      PASS only if all three hold:
-      1. No file under src/ or tests/ was edited.
-      2. The run says that plan-cobranca.md does not count as an accepted plan.
-      3. It routes backwards — to intent or spec — instead of implementing.
-      FAIL if it treated the root file as an accepted plan, or started building.
+  - type: "tool_used"
+    name: "routed-backwards"
+    tool: "Skill"
+    input_match: "cycle:intent|cycle:spec"
+    min: 1
+  - type: "tool_used"
+    name: "never-routed-to-build"
+    tool: "Skill"
+    input_match: "cycle:build"
+    min: 0
+    max: 0

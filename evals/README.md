@@ -42,11 +42,11 @@ node "$(dirname "$0")/../run.mjs" --assemble <case-id> --out "$PWD"
 | `tool_used` | calls to `tool` whose JSON input matches `input_match`, between `min` (default 1) and `max` | `min: 0, max: 0` is how you assert a tool was never called |
 | `tool_order` | `before` and `after` were both called, in that order | each is a tool name or `{tool, input_match}` |
 | `file_exists` | a file **Claude created** matches the `path` glob, or none does with `exists: false` | it only sees files created **during the run**: a file the scaffold wrote, or one Claude merely modified, is invisible to it. "Nothing under `src/` changed" therefore needs an `llm` grader over the trace |
-| `regex` | a pattern in the **`target`** (`last_message` by default, or `trace`, `files`, `{source: file, path: …}`) | the key is `target`, not `focus` (that one is the `llm` grader's) — and like `file_exists` it only sees files the run **creates**, so a fixture file cannot be asserted this way. To check that the run did not change something, count tool calls with `tool_used` and `max: 0` |
-| `llm` | a judge votes PASS in at least two of three votes | `focus` picks what it reads: `last_message`, `trace`, `files`, or `{source: file, path: …}` to grade a file the run produced |
+| `regex` | a pattern in the **`target`** (`last_message` by default, or `trace`, `files`, `{source: file, path: …}`), with `match: contains` (the default), `not_contains` or `count:N`, and optional `flags` passed straight to `RegExp` | the key is `target`, not `focus` (that one is the `llm` grader's) — a `focus:` here is a **hard load error**, not a warning, and it cost this suite a case that was written and reverted 41 minutes later having never run (2026-09-13). **It reads any file in the workspace at the end of the run**, whoever put it there: measured 2026-09-21, an unanchored pattern matched the middle of a file the scaffold placed and the run never touched. **`^` is the start of the FILE, not of a line**, unless you set `flags: "m"` — a frontmatter field needs `\n` in front of it, or the `m` flag |
+| `llm` | a judge votes PASS in at least two of three votes | `focus` picks what it reads: `last_message`, `trace`, `files`, or `{source: file, path: …}` — which, like `regex`, reads a file the scaffold placed as readily as one the run wrote |
 | `baseline` | the run is at least as good as a reference transcript | |
 
-**A case file is validated only when it is selected.** `--tag` or `--case` that matches nothing validates nothing, so a broken case can sit in the suite looking fine until the day the gate picks it. To check a case you just wrote, select it: `claude plugin eval . --trust-plugin --ablation none --case '<id>' --max-cost-usd 0.02`. It loads, warns about what cannot pass, prints the deterministic graders, and stops on the ceiling for about twenty cents.
+**A case file is validated only when it is selected.** `--tag` or `--case` that matches nothing validates nothing, so a broken case can sit in the suite looking fine until the day the gate picks it. To check a case you just wrote, select it: `claude plugin eval . --trust-plugin --scaffold --allow-tools Write Edit Bash --ablation none --case '<id>' --max-cost-usd 0.02`. **`--scaffold` matters**: without it a case whose graders read fixture files is judged against an empty workspace. Without `--allow-tools` the runner also warns that the case's own `allowed_tools` are not granted, which is noise, not a finding. It loads, warns about what cannot pass, and prints the deterministic graders — **but it does not stop on the ceiling.** Measured 2026-09-21 on two live loads: `--max-cost-usd 0.02` let both cases run in full, at US$0.67 and US$0.61, and the runner said so — *"cost ceiling $0.02 exceeded: $0.67 spent by runs already in flight when it was crossed; nothing was skipped"*. The ceiling is checked **between** runs, and a single-case selection has nothing in front of it. This line used to promise twenty cents; budget a full run.
 
 Prefer deterministic graders. Every `llm` grader is named in the case's `case.meta.md`, so the drift risk stays visible.
 
@@ -55,6 +55,22 @@ On a 36,285-character plan, three judges voted FAIL on a run that had done nothi
 
 ### What the eval sandbox does not have
 `node` and `npm` are **not installed** in the run's sandbox — more precisely, `node`, `npm` and `npx` on `PATH` are symlinks into a directory the sandbox cannot read, so they resolve as broken, and no `bun` or `deno` either (a run reported this itself on 13/09). A case cannot expect `scripts/*.mjs` or `npm test` to run there; a good run applies the logic by hand and says so, and the criteria must accept that. Found on 2026-09-13 when a run that did everything right was failed by a judge demanding the resolver's printed summary.
+
+### 🩸 A grader that forbids a phrase its own fixture contains, 2026-09-21
+
+`tool_used`'s `input_match` is a regex over the **whole JSON input** of the call — `old_string` and the
+file path included, not only what was written. So a `max: 0` grader fires on a run that merely *quotes*
+the forbidden phrase. Cases `0003` and `0005` forbade `status: accepted` and failed a correct run for
+writing *"a human decision is missing before `status: accepted`"*; a sweep found the same shape in three
+cases and five graders, each forbidding a phrase its own mapped fixture already contained.
+
+Two rules came out of it. **Grep the mapped fixture for the phrase before shipping a `max: 0` grader** —
+if it is in there, the grader will fire on a correct run sooner or later, and a case that fails
+intermittently teaches whoever hits it to re-run until green. And **prefer asserting the artifact over
+interrogating the transcript**: a run that is obeying a rule will explain the rule, and no pattern over a
+tool call can tell the explanation from the violation. The replacement reads the plan file itself and
+needs two graders that cover each other — one that the field is still there, one that the other value is
+not — because either alone passes vacuously when the file is deleted.
 
 ### 🩸 The false green, 2026-09-13
 The first port of `0002` scored **1.00** and proved nothing: `scaffold_script` had been written as an inline command under `execution:`, which the loader silently ignored, so the agent ran in an **empty workspace**. "No file under `src/` changed" was vacuously true and the judge passed a run that had nothing to do. The lesson is in the suite now: a case whose fixture matters carries a `file_exists` grader for something the fixture makes possible, so an empty workspace fails loudly instead of passing quietly.

@@ -74,7 +74,7 @@
         0
       ],
       [
-        "research: lembrete de renova\u00e7\u00e3o",
+        "research: lembrete de renovação",
         [
           "research"
         ],
@@ -88,14 +88,14 @@
         35
       ],
       [
-        "plano aceito: lembrete de renova\u00e7\u00e3o",
+        "plano aceito: lembrete de renovação",
         [
           "plans"
         ],
         60
       ],
       [
-        "build: sele\u00e7\u00e3o do lote e a marca antes do envio",
+        "build: seleção do lote e a marca antes do envio",
         [
           "src",
           "tests",
@@ -104,5 +104,26 @@
         95
       ]
     ]
+  },
+  "0011-constraints-interview-writes-bar": {
+    "fixture": "k"
+  },
+  "0012-bar-lens-fires-on-weakened-commit": {
+    "fixture": "m"
+  },
+  "0013-bar-lens-silent-on-unrelated-diff": {
+    "fixture": "m"
+  },
+  "0014-bar-routes-bare-repo-no-tooling": {
+    "fixture": "l"
+  },
+  "0015-bar-lens-checks-not-just-reads": {
+    "fixture": "m"
+  },
+  "0016-constraints-python-defaults": {
+    "fixture": "n"
+  },
+  "0017-routine-keeps-running": {
+    "fixture": "o"
   }
 }

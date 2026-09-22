@@ -50,11 +50,11 @@ graders:
       This plan touches money, customer-facing copy and a screen, and the repo carries .cycle/council.json.
       
       PASS only if all five hold:
-      1. The frontmatter records council: [...] including pool seats beyond the five engineering ones
+      1. The frontmatter records council: [...] including pool seats beyond the seven fixed ones
          (marketing, content, ux, cx, brand-voice or commercial). The eval sandbox has no node, so the
          resolver may have been applied by hand; what matters is that the pool seats sat.
       2. The frontmatter records joker: <domain> — <demand or 'survives'>.
       3. At least two risk rows have a pool seat as their origin.
       4. There is a ## Signposts section with at least two lines.
       5. The plan's status is still draft.
-      FAIL if the council spoke only as five fixed seats, or if the Mule left no row.
+      FAIL if the council spoke only as seven fixed seats, or if the Mule left no row.

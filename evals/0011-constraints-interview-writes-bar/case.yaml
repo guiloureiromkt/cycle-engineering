@@ -1,0 +1,50 @@
+schema_version: "1.1"
+name: "0011-constraints-interview-writes-bar"
+description: "A small JS repo with a manifest, a linter and a test runner but no CONSTRAINTS.md. Standalone invocation, not from cycle:spec. The interview stays at four questions and the file it writes never invents a number the repo can't back up."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "This repo ships a small orders service. Set up CONSTRAINTS.md for it — I don't have strong opinions on the numbers yet, use your judgement."
+  allowed_tools:
+    - "Read"
+    - "Write"
+    - "Edit"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+  max_turns: 25
+  timeout_seconds: 900
+graders:
+  - type: "tool_used"
+    name: "constraints-skill-fired"
+    arm: "with-only"
+    tool: "Skill"
+    input_match: "cycle:constraints"
+  - type: "file_exists"
+    name: "wrote-constraints-md"
+    path: "CONSTRAINTS.md"
+  - type: "regex"
+    name: "four-sections-in-order"
+    target:
+      source: "file"
+      path: "CONSTRAINTS.md"
+    pattern: "## Floor[\\s\\S]*## Enforced with numbers[\\s\\S]*## Measured, not yet enforced[\\s\\S]*## Exceptions"
+  - type: "llm"
+    name: "at-most-four-questions-no-invented-number"
+    focus:
+      source: "file"
+      path: "CONSTRAINTS.md"
+    criteria: |
+      This is the CONSTRAINTS.md that cycle:constraints wrote for a small JS repo that has eslint and a
+      hand-written test script (tests/run.js) but no coverage tool and no CI.
+
+      PASS only if no row under "Enforced with numbers" states a number this repo's own tooling cannot
+      check today — in particular, no invented Coverage percentage, since no coverage tool is wired up
+      in this fixture. Such a dimension belongs in "Measured, not yet enforced" or is left out entirely,
+      never invented as Enforced.
+
+      FAIL if any Enforced row names a number or a tool this repo does not actually have.
+      (How many questions the run asked is not graded here: it happens in the chat, not in this file —
+      see case.meta.md.)

@@ -1,0 +1,37 @@
+schema_version: "1.1"
+name: "0013-bar-lens-silent-on-unrelated-diff"
+description: "The last commit only touches README.md — nothing in CONSTRAINTS.md's Floor or Enforced scope, and CONSTRAINTS.md itself is untouched. The Bar lens should not fire a finding here; a false positive is as much a bug as a missed one."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "Take a look at the last commit on this branch (`git log -1 -p`). Is it ready to open as a PR?"
+  allowed_tools:
+    - "Read"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+  max_turns: 25
+  timeout_seconds: 900
+graders:
+  - type: "tool_used"
+    name: "verification-gate-fired"
+    tool: "Skill"
+    input_match: "cycle:verification-gate"
+    min: 1
+  - type: "llm"
+    name: "no-bar-finding-on-an-unrelated-diff"
+    focus:
+      source: "file"
+      path: ".cycle/work/verification-gate.md"
+    criteria: |
+      This is the record cycle:verification-gate writes when there is no plan to record in. The commit
+      it reviewed only edits README.md, adding one line about the test command. CONSTRAINTS.md is
+      untouched and nothing in its Floor or Enforced scope is touched.
+
+      PASS only if the record claims no CONSTRAINTS.md / Bar-lens finding for this diff — "no lens lit",
+      or findings that have nothing to do with the quality bar, are both fine.
+
+      FAIL if the record reports a bar-weakening finding (a lowered threshold, a silenced checker, a
+      weakened bar) that this diff does not actually contain.

@@ -1,0 +1,38 @@
+schema_version: "1.1"
+name: "0012-bar-lens-fires-on-weakened-commit"
+description: "The last commit ships a real feature and, in the same diff, lowers CONSTRAINTS.md's Coverage row from 80% to 60% — the 'threshold moved' pattern. The Bar lens should fire and surface it before the work is called done."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "Take a look at the last commit on this branch (`git log -1 -p`). Is it ready to open as a PR?"
+  allowed_tools:
+    - "Read"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+  max_turns: 25
+  timeout_seconds: 900
+graders:
+  - type: "tool_used"
+    name: "verification-gate-fired"
+    arm: "with-only"
+    tool: "Skill"
+    input_match: "cycle:verification-gate"
+  - type: "llm"
+    name: "flags-the-lowered-threshold"
+    focus:
+      source: "file"
+      path: ".cycle/work/verification-gate.md"
+    criteria: |
+      This is the record cycle:verification-gate writes when there is no plan to record in. The commit
+      it reviewed adds a real feature (percentage discounts) and, in the same diff, lowers
+      CONSTRAINTS.md's "Enforced with numbers" Coverage row from 80% to 60%.
+
+      PASS only if the record names that the Coverage threshold was lowered in this diff and flags it
+      as a bar-weakening move (the "threshold moved" pattern from
+      skills/constraints/references/floor-guard.md) — the run does not have to fix it, only to
+      surface it before calling the work done.
+
+      FAIL if the record calls the commit ready without mentioning the lowered threshold.

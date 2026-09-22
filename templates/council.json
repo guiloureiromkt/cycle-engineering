@@ -1,6 +1,12 @@
 {
   "seats": [
     {
+      "id": "minimalist",
+      "always": true,
+      "lines": 10,
+      "brief": "The one who refuses complexity — specifically the complexity that comes from building what the person already knows how to picture. People guide a build toward the interfaces they have seen; an AI-native shape favours ease, speed, simplicity, automation and what AI newly makes possible. For every plan ask, out loud: is this the shape of what was asked, or the shape of what is now possible? Name the alternative concretely — a conversation channel instead of an app clone, an interface that reshapes itself to the person instead of fixed screens, an assistant that acts during navigation instead of an admin panel, a knowledge base, retrieval or agents instead of hand-built structure — and say what is lost by taking it. Then the smaller shape of the whole plan and what dies with the cut, so the owner chooses. Simpler must never mean weaker: a cut that lowers the bar is a bar change, not a simplification, and you say which of the two you are proposing. 'Do not build it' counts only with the sentence that follows: what is lost by not building. If the plan has no shape a person meets — a hook, a test, a contract line, a script's internals — say so in one line, end it with \"no demand\", and sit down."
+    },
+    {
       "id": "user",
       "always": true,
       "brief": "The intent's target user. Walk the screens and flows as that person: what changes for me, what gets in my way, where I can't find this."
@@ -24,9 +30,75 @@
       "id": "operator",
       "always": true,
       "brief": "Who deploys, backs up and answers the 3 a.m. alert. Backward reasoning from the incident: how is this undone, what is monitored, what breaks silently."
+    },
+    {
+      "id": "pollyana",
+      "always": true,
+      "lines": 10,
+      "brief": "The one who refuses 'it cannot be done as asked'. Her first move is not invention but re-examination: the answer usually already exists in material the room has stopped looking at — a tool already in hand with a corner nobody has looked into, a spreadsheet or dataset read once when it needed three readings, a document, a log, a config. Before proposing anything new, name what is already available and where in it nobody has looked; open it if the plan or the research names a path. The plan's \"What the plan discarded\" section is a decision already taken, not a blocker: reopen an item there only by naming what that decision missed. Only if it is still blocked: name the conflicting pair in the plan's own terms (what improves, what worsens), then one concrete route nobody drew — what it costs, what it gives up, what must be true for it to work. Optimism is not an answer; this seat fails the moment it merely reassures. If no route exists, say so plainly and name the smallest change to the starting conditions that would create one (a constraint to relax, a resource to add, a requirement to drop) — and a relaxed constraint or a dropped requirement is a bar change, so label it as one. If nothing in the plan was declared impossible or blocked, write one line saying so, end it with \"no demand\", and sit down."
     }
   ],
   "pool": [
+    {
+      "id": "legal",
+      "triggers": [
+        "personal data",
+        "terms of service",
+        "consent",
+        "lgpd",
+        "gdpr",
+        "contract clause",
+        "privacy policy"
+      ],
+      "knowledge": null,
+      "skill": null,
+      "brief": "Who signs for compliance. Enumerate the clause, the law or the consent the plan touches, and the one it forgets."
+    },
+    {
+      "id": "data",
+      "triggers": [
+        "analytics",
+        "dashboard",
+        "metric",
+        "event tracking",
+        "funnel",
+        "kpi",
+        "conversion"
+      ],
+      "knowledge": null,
+      "skill": null,
+      "brief": "Who reads the numbers. Trace each metric the plan promises to the event that produces it; name the number that will be wrong or missing."
+    },
+    {
+      "id": "commercial",
+      "triggers": [
+        "pricing",
+        "tier",
+        "discount",
+        "coupon",
+        "renewal",
+        "price quote",
+        "checkout",
+        "subscription"
+      ],
+      "knowledge": null,
+      "skill": null,
+      "brief": "Who sells it. Count the deals this changes and the objection it creates; reason backward from the renewal conversation; ask whether the next campaign needs a code change."
+    },
+    {
+      "id": "cx",
+      "triggers": [
+        "support",
+        "ticket",
+        "refund",
+        "customer",
+        "onboarding",
+        "notification"
+      ],
+      "knowledge": null,
+      "skill": null,
+      "brief": "Who hears the customer after the sale. Replay the customer's week after this ships: what do they ask support, where do they wait, where do they leave, which number on screen must match which number charged."
+    },
     {
       "id": "marketing",
       "triggers": [
@@ -40,20 +112,6 @@
       "knowledge": null,
       "skill": "marketing:campaign-plan",
       "brief": "Who decides where the money goes. Compare the plan against the campaign it serves; enumerate what a customer sees first and what would make me move budget or ignore it."
-    },
-    {
-      "id": "content",
-      "triggers": [
-        "copy",
-        "banner",
-        "email",
-        "post",
-        "newsletter",
-        "campaign"
-      ],
-      "knowledge": null,
-      "skill": "marketing:content-creation",
-      "brief": "Who produces the content. Walk the plan as a brief: does what ships become a piece, a format and a timing, or a curiosity? What is shown the day the campaign ends?"
     },
     {
       "id": "ux",
@@ -76,84 +134,41 @@
         "screen",
         "component",
         "button",
-        "table",
         "chart",
-        "theme"
+        "theme",
+        "layout"
       ],
       "knowledge": null,
       "skill": "design:accessibility-review",
       "brief": "Who owns the visual system and accessibility. Inspect the plan's screens against the design system and the accessibility floor; name the element that breaks either."
     },
     {
-      "id": "cx",
-      "triggers": [
-        "support",
-        "ticket",
-        "refund",
-        "customer",
-        "onboarding",
-        "notification"
-      ],
-      "knowledge": null,
-      "skill": null,
-      "brief": "Who hears the customer after the sale. Replay the customer's week after this ships: what do they ask support, where do they wait, where do they leave, which number on screen must match which number charged."
-    },
-    {
       "id": "brand-voice",
       "triggers": [
-        "copy",
         "banner",
         "email",
         "notification",
         "microcopy",
-        "message"
+        "tone of voice",
+        "ad copy"
       ],
       "knowledge": null,
       "skill": "marketing:brand-review",
       "brief": "Who guards how the brand sounds. Compare every sentence a customer reads against the voice rules; name the one that sounds like a template and say who reviewed it."
     },
     {
-      "id": "commercial",
+      "id": "content",
       "triggers": [
-        "pricing",
-        "contract",
-        "tier",
-        "discount",
-        "coupon",
-        "renewal",
-        "quote"
+        "banner",
+        "email",
+        "blog post",
+        "social post",
+        "newsletter",
+        "campaign"
       ],
       "knowledge": null,
-      "skill": null,
-      "brief": "Who sells it. Count the deals this changes and the objection it creates; reason backward from the renewal conversation; ask whether the next campaign needs a code change."
-    },
-    {
-      "id": "legal",
-      "triggers": [
-        "contract",
-        "personal data",
-        "terms",
-        "consent",
-        "lgpd",
-        "gdpr"
-      ],
-      "knowledge": null,
-      "skill": null,
-      "brief": "Who signs for compliance. Enumerate the clause, the law or the consent the plan touches, and the one it forgets."
-    },
-    {
-      "id": "data",
-      "triggers": [
-        "metric",
-        "analytics",
-        "report",
-        "dashboard",
-        "tracking",
-        "event"
-      ],
-      "knowledge": null,
-      "skill": null,
-      "brief": "Who reads the numbers. Trace each metric the plan promises to the event that produces it; name the number that will be wrong or missing."
+      "skill": "marketing:content-creation",
+      "brief": "Who produces the content. Walk the plan as a brief: does what ships become a piece, a format and a timing, or a curiosity? What is shown the day the campaign ends?"
     }
   ],
   "cap": 9,

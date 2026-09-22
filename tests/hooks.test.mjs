@@ -9,6 +9,8 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { commandDir, repoFor, gateRepo } from "../hooks/_lib.mjs";
+
 const HOOKS = join(dirname(fileURLToPath(import.meta.url)), "..", "hooks");
 const hook = (name) => join(HOOKS, name);
 const NODE_DIR = dirname(process.execPath);
@@ -45,7 +47,7 @@ function write(dir, rel, content = "x\n") {
   mkdirSync(dirname(join(dir, rel)), { recursive: true });
   writeFileSync(join(dir, rel), content);
 }
-const bash = (command) => ({ tool_name: "Bash", tool_input: { command } });
+const bash = (command, cwd) => ({ tool_name: "Bash", tool_input: { command }, ...(cwd ? { cwd } : {}) });
 const today = () => new Date().toISOString().slice(0, 10);
 const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
 
@@ -70,6 +72,154 @@ const gate = (cmd, dir, env) => runHook("production-gate.mjs", bash(cmd), dir, e
 const sync = (cmd, dir) => runHook("plan-sync.mjs", bash(cmd), dir).status;
 const snap = (cmd, dir) => runHook("snapshot-guard.mjs", bash(cmd), dir).status;
 const protect = (input, dir) => runHook("protect-cycle.mjs", input, dir).status;
+
+// ───────────── repo resolution (task 1) ─────────────
+test("repoFor: the directory itself, then the nearest ancestor", () => {
+  const d = repo({ cycle: true });
+  const deep = join(d, "src", "a"); mkdirSync(deep, { recursive: true });
+  assert.equal(repoFor(d), d);
+  assert.equal(repoFor(deep), d);
+});
+
+test("repoFor: a nested repo under a gated tree stays gated (fail closed)", () => {
+  const d = repo({ cycle: true });
+  const nested = join(d, "vendor", "thing"); mkdirSync(join(nested, ".git"), { recursive: true });
+  assert.equal(repoFor(nested), d, "a .git below a gated root must not ungate it");
+});
+
+test("repoFor: never throws on hostile input", () => {
+  for (const p of ["", "/", "~", "/nonexistent/".padEnd(300, "x/")]) assert.doesNotThrow(() => repoFor(p));
+});
+
+test("commandDir: the payload cwd, then cd prefixes folded left to right", () => {
+  const a = repo({ cycle: false });
+  const b = repo({ cycle: true });
+  assert.equal(commandDir(bash("./deploy.sh", a)), a);
+  assert.equal(commandDir(bash(`cd ${b} && ./deploy.sh`, a)), b);
+  assert.equal(commandDir(bash(`cd ${b} && cd src`, a)), join(b, "src"), "sequential cds fold");
+  assert.equal(commandDir(bash(`set -e\ncd ${b}\n./deploy.sh`, a)), b, "multiline needs the m flag");
+});
+
+test("commandDir: a cd hidden in a nested shell or a -C flag still moves the gate", () => {
+  const a = repo({ cycle: false });
+  const b = repo({ cycle: true });
+  assert.equal(commandDir(bash(`bash -c "cd ${b} && ./deploy.sh --prod"`, a)), b);
+  assert.equal(commandDir(bash(`ssh host "cd ${b} && ./deploy.sh"`, a)), b);
+  assert.equal(commandDir(bash(`git -C ${b} push origin main`, a)), b);
+  assert.equal(commandDir(bash(`make -C ${b} deploy`, a)), b);
+});
+
+test("commandDir: a path merely mentioned does not move the gate", () => {
+  const a = repo({ cycle: false });
+  const b = repo({ cycle: true });
+  assert.equal(commandDir(bash(`cat ${b}/README.md`, a)), a);
+});
+
+test("gateRepo: session ungated, command inside a gated repo -> that repo", () => {
+  const session = repo({ cycle: false });
+  const gated = repo({ cycle: true });
+  const prev = process.env.CLAUDE_PROJECT_DIR;
+  process.env.CLAUDE_PROJECT_DIR = session;
+  try { assert.equal(gateRepo(bash("./deploy.sh --prod", gated)), gated); }
+  finally { process.env.CLAUDE_PROJECT_DIR = prev; }
+});
+
+test("gateRepo: THE UNION RULE — an unresolved command in a gated session still judges the session", () => {
+  const gated = repo({ cycle: true });
+  const prev = process.env.CLAUDE_PROJECT_DIR;
+  process.env.CLAUDE_PROJECT_DIR = gated;
+  try {
+    const r = gateRepo(bash(`cd ${gated} && ./deploy.sh --prod && cd /tmp`, gated));
+    assert.equal(r, gated, "unresolved must fall back to the session root, never to null");
+  } finally { process.env.CLAUDE_PROJECT_DIR = prev; }
+});
+
+// ───────────── production gate · repo resolution (task 2) ─────────────
+test("production gate: session outside, deploy into a gated repo → blocked, naming that repo's file", () => {
+  const session = repo({ cycle: false });
+  const target = repo({ cycle: true });
+  const r = runHook("production-gate.mjs", bash("./deploy.sh --prod", target), session);
+  assert.equal(r.status, 2);
+  assert.ok(r.stderr.includes(join(target, ".cycle/release-approval")), "must print the absolute path it wants");
+  assert.match(r.stderr, /not gated from this session before/, "the first block must not read as a regression");
+});
+
+test("production gate: DOES NOT LOOSEN — a trailing cd out of a gated session still blocks", () => {
+  const gated = repo({ cycle: true });
+  const r = runHook("production-gate.mjs", bash(`cd ${gated} && ./deploy.sh --prod && cd /tmp`, gated), gated);
+  assert.equal(r.status, 2, "blocked today; the fix may not allow it");
+});
+
+test("production gate: the approval is read from the target repo, not the session root", () => {
+  const session = repo({ cycle: true });
+  write(session, ".cycle/release-approval", `x · ${today()} · wrong repo\n`);
+  const target = repo({ cycle: true });
+  assert.equal(runHook("production-gate.mjs", bash("./deploy.sh --prod", target), session).status, 2);
+  write(target, ".cycle/release-approval", `x · ${today()} · right repo\n`);
+  assert.equal(runHook("production-gate.mjs", bash("./deploy.sh --prod", target), session).status, 0);
+});
+
+test("production gate: RELEASE_APPROVAL does not travel to another repo", () => {
+  const session = repo({ cycle: true });
+  const other = repo({ cycle: true });
+  const env = { RELEASE_APPROVAL: "gui release" };
+  assert.equal(runHook("production-gate.mjs", bash("./deploy.sh --prod", session), session, env).status, 0);
+  const r = runHook("production-gate.mjs", bash("./deploy.sh --prod", other), session, env);
+  assert.equal(r.status, 2, "one session now spans repos; the env var approves only the one it was set in");
+  assert.match(r.stderr, /approved elsewhere in this session/, "a scope miss must not read like no approval at all");
+});
+
+// ───────────── plan-sync / snapshot-guard · repo resolution (task 3) ─────────────
+test("plan-sync: an accepted plan in the target repo blocks a code commit made from elsewhere", () => {
+  const session = repo({ cycle: false });
+  const target = repo({ cycle: true, plan: "accepted" });
+  write(target, "src/a.js", "x\n");
+  git(target, "add", "src/a.js");
+  const r = runHook("plan-sync.mjs", bash("git commit -m 'x'", target), session);
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /PLAN-SYNC/);
+});
+
+test("plan-sync: DOES NOT LOOSEN — a trailing cd out of a gated session still blocks", () => {
+  const gated = repo({ cycle: true, plan: "accepted" });
+  write(gated, "src/a.js", "x\n");
+  git(gated, "add", "src/a.js");
+  const r = runHook("plan-sync.mjs", bash(`cd ${gated} && git commit -m 'x' && cd /tmp`, gated), gated);
+  assert.equal(r.status, 2);
+});
+
+test("snapshot-guard: a destructive command is judged against the target repo's snapshots", () => {
+  const session = repo({ cycle: false });
+  const target = repo({ cycle: true });
+  assert.equal(runHook("snapshot-guard.mjs", bash("git reset --hard", target), session).status, 2);
+  write(target, ".cycle/work/i/snapshot.md", "stash\n");
+  assert.equal(runHook("snapshot-guard.mjs", bash("git reset --hard", target), session).status, 0);
+});
+
+test("snapshot-guard: DOES NOT LOOSEN — a trailing cd out of a gated session still blocks", () => {
+  const gated = repo({ cycle: true });
+  const r = runHook("snapshot-guard.mjs", bash(`cd ${gated} && git reset --hard && cd /tmp`, gated), gated);
+  assert.equal(r.status, 2);
+});
+
+// ───────────── protect-cycle · no longer depends on resolution (task 4) ─────────────
+test("protect-cycle: the string rules fire from any session, gated or not", () => {
+  const session = repo({ cycle: false });
+  const target = repo({ cycle: true });
+  const app = join(target, ".cycle/release-approval");
+  assert.equal(protect({ tool_name: "Write", tool_input: { file_path: app, content: "x" } }, session), 2, "write route");
+  assert.equal(protect(bash(`echo "gui · ${today()} · x" > ${app}`), session), 2, "shell route, ungated session");
+  assert.equal(protect(bash(`cd /tmp && rm -r${"f"} ${target}/.cycle`), session), 2, "cd out must not be a bypass");
+});
+
+// ───────────── session-start · the gate's reach (task 5) ─────────────
+test("session-start: an ungated session names the gated repos two levels down", () => {
+  const parent = mkdtempSync(join(tmpdir(), "cycle-tree-")); dirs.push(parent);
+  const here = join(parent, "notes"); mkdirSync(here, { recursive: true });
+  mkdirSync(join(parent, "Repos", "product", ".cycle"), { recursive: true });
+  const out = JSON.parse(runHook("session-start.mjs", {}, here).stdout).hookSpecificOutput.additionalContext;
+  assert.match(out, /product/, "must name the gated repo living at depth 2, which is the real layout");
+});
 
 // ───────────── session-start ─────────────
 test("session-start without .cycle/: one line pointing at /cycle:init", () => {

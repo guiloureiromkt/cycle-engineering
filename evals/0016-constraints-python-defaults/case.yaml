@@ -1,0 +1,38 @@
+schema_version: "1.1"
+name: "0016-constraints-python-defaults"
+description: "A Python repo (pyproject.toml, ruff, pytest) with no CONSTRAINTS.md. The tools it proposes should be the Python ones, not the source skill's JS/TS menu (tsc, eslint, gitleaks, vitest)."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "Set up CONSTRAINTS.md for this repo."
+  allowed_tools:
+    - "Read"
+    - "Write"
+    - "Edit"
+    - "Bash"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+  max_turns: 25
+  timeout_seconds: 900
+graders:
+  - type: "file_exists"
+    name: "wrote-constraints-md"
+    path: "CONSTRAINTS.md"
+  - type: "llm"
+    name: "python-appropriate-not-js-menu"
+    focus:
+      source: "file"
+      path: "CONSTRAINTS.md"
+    criteria: |
+      This is CONSTRAINTS.md written by cycle:constraints against a repo whose only tooling is
+      Python: pyproject.toml, a [tool.ruff] section, pytest under tests/.
+
+      PASS only if every tool named in "Enforced with numbers" (Checked by column) is
+      Python-appropriate — e.g. ruff, mypy, pytest/pytest-cov, detect-secrets — and none of the
+      source skill's JS/TS-specific tools (tsc, biome, eslint, vitest, jest, gitleaks as the
+      Secrets default) appear as a proposed checker.
+
+      FAIL if a JS/TS tool is named as the checker for a Python repo, or if the interview clearly
+      ran off the generic JS example rather than this repo's real stack.

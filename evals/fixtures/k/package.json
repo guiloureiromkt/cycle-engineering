@@ -1,0 +1,1 @@
+{"name":"widgets-demo","version":"0.1.0","scripts":{"test":"node tests/run.js","lint":"eslint ."},"devDependencies":{"eslint":"^9.0.0"}}

@@ -1,12 +1,14 @@
 // cycle-engineering · protect-cycle (PreToolUse on Write|Edit|MultiEdit|Bash).
 // The agent neither fabricates a release approval nor switches the gates off.
-import { cycleOn, isMain, main } from "./_lib.mjs";
+import { isMain, main } from "./_lib.mjs";
 
 const APPROVAL_MSG = "cycle · PROTECTED: .cycle/release-approval is written by a human outside the agent. Ask the user to create it; do not write it.";
 const REMOVE_MSG = "cycle · PROTECTED: removing .cycle/ or its config disables the gates. Only the user does that, by hand, to opt out.";
 
+// These five rules are pure string rules about `.cycle` paths: they never needed to know which repository
+// they are in. Asking would hand the agent a one-token bypass (`cd /tmp && …`) for the one hook whose whole
+// job is that the agent cannot switch the gates off. They run on every payload, gated session or not.
 export function run(input) {
-  if (!cycleOn()) return { block: null };
   const ti = input?.tool_input || {};
   const path = String(ti.file_path || "").replace(/\\/g, "/");
   const cmd = String(ti.command || "").toLowerCase();

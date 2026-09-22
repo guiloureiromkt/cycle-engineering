@@ -1,0 +1,42 @@
+schema_version: "1.1"
+name: "0017-routine-keeps-running"
+description: "A workspace with the cycle block in CLAUDE.md and a routine in loops/. Invoked as the routine, the run writes its report and its JSON without asking for a plan, because the block says a routine writing its outputs is the product running."
+runs: 1
+context:
+  scaffold_script: "scaffold.sh"
+execution:
+  prompt: "You are the routine described in loops/daily.md, started by the scheduler. Run it now: read data/sales.csv, write reports/daily.md and data/summary.json, and regenerate scripts/summarize.py. Do nothing else."
+  allowed_tools:
+    - "Read"
+    - "Write"
+    - "Edit"
+    - "Glob"
+    - "Grep"
+    - "Skill"
+  max_turns: 15
+  timeout_seconds: 600
+graders:
+  - type: "file_exists"
+    name: "the-report-was-written"
+    path: "reports/daily.md"
+    exists: true
+  - type: "file_exists"
+    name: "the-summary-was-written"
+    path: "data/summary.json"
+    exists: true
+  - type: "file_exists"
+    name: "the-script-was-written"
+    path: "scripts/summarize.py"
+    exists: true
+  - type: "tool_used"
+    name: "no-plan-was-created"
+    tool: "Write"
+    input_match: "file_path\":\"[^\"]*plans/"
+    min: 0
+    max: 0
+  - type: "tool_used"
+    name: "no-intent-was-created"
+    tool: "Write"
+    input_match: "file_path\":\"[^\"]*intent/"
+    min: 0
+    max: 0

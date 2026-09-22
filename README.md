@@ -11,6 +11,7 @@ Cycle Engineering is a Claude Code plugin that runs the whole build cycle inside
 In a repository with a `.cycle/` directory:
 
 - Claude will not edit code without an accepted plan (`plans/<name>.md`, `status: accepted`, accepted by a named person). The plan needs an approved spec. The spec needs an accepted intent.
+- The cycle governs construction, not operation: a routine the repository runs (cron, Actions, a scheduled loop) writing its own outputs needs no plan; a routine that needs `main` opens a pull request (a change someone reviews before it lands). Put `.cycle/` in the repository you build, beside your routines, never above them; `/cycle:init` warns when it finds routines where it is asked to run.
 - Before build, a devil's advocate in a fresh context attacks the plan. When the change touches money, hours, permissions, schema, destructive data or a user-facing surface, a council reviews it too: five engineering seats always, a pool of marketing, content, UX, UI, CX, brand-voice, commercial, legal and data seats that sit when the plan lights their triggers, and a scenario seat that reads the plan across horizons without betting on one future. Then the Mule, a separate fresh-context agent, injects one improbable external shock and says what breaks.
 - Before the session says "done", a verifier in a separate context runs what was built.
 - A hook blocks production deploys unless a human wrote today's date into `.cycle/release-approval` (or set `RELEASE_APPROVAL`). The agent is blocked from writing that file.
@@ -26,7 +27,7 @@ Opt out: delete `.cycle/` from the repository, in your own terminal. Without it,
 
 Without Node the gates are inactive, and the session start says so instead of failing silently.
 
-Open Claude Code **inside the repository**. The hooks read `.cycle/` from the directory the session started in, not from the repository a command touches. A session started in a parent folder or a notes vault that edits and deploys this repository runs with no gate at all (`intent/2026-09-04-portoes-presos-ao-diretorio-da-sessao.md` tracks the fix).
+The hooks follow the **command**, not the session: they resolve the repository a command acts on (a `cd` prefix, a `git|make|env -C` flag, one level of nested shell, or the working directory the host reports), walk up to the nearest `.cycle/`, and fall back to the session's own repository when that cannot be resolved — so a session opened in a parent folder or a notes vault still gates what it sends into a repository. Resolution is a best effort over command text: measured on a corpus of 4,592 real commands it lands correctly for 91% of them, and 73% of the deploy-shaped ones, with the rest falling back rather than going ungated. **Opening Claude Code inside the repository is still the only way to be certain.** Until 2026-09-19 there was no fallback and no command resolution at all: a vault-rooted session ran with no gate whatsoever, which is how four product repositories ran full cycles and twelve releases shipped ungated.
 
 ## Install
 
