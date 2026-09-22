@@ -10,7 +10,7 @@
     "resolve-seats": "node scripts/resolve-seats.mjs",
     "evals:full": "claude plugin eval . --scaffold --allow-tools Bash Write Edit WebSearch WebFetch --runs 3 --trust-plugin --max-cost-usd 120 --no-publish",
     "port-check": "node scripts/port-check.mjs",
-    "gate": "node scripts/gate.mjs --threshold 1.0 --max-cost-usd 25",
+    "gate": "node scripts/gate.mjs",
     "retro": "node scripts/retro.mjs"
   },
   "engines": {

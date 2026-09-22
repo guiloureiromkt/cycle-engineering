@@ -13,7 +13,7 @@ Not "monthly, or when a new model ships" — that is a wish, and nothing invoked
 | Trigger | It reads | It may write |
 |---|---|---|
 | **A retro was written** (`.cycle/work/<intent>/retro.md`) | that retro, and the plan it measures | an `intent/` about the method, `origin: agent` |
-| **`npm run gate` failed** | the failing case's report and the diff that broke it | an `intent/`, or a branch fixing the case when the case is what is wrong |
+| **`npm run evals` or the weekly run has a red case** | the case's report and the diff since the last green | an `intent/`, or a branch fixing the case when the case is what is wrong — a red case is a finding, never a blocked tag (`npm run gate` is deterministic and runs no case) |
 | **The weekly routine** (`docs/routines/weekly-evolve.md`) | every retro since the last run, `--repeats`, `intent/`, the declared-debt count | `.cycle/work/evolve/<date>.md`, intents, a branch for a docs-only fix |
 | **A person asks** | whatever they point at | whatever they ask for, still as a proposal |
 

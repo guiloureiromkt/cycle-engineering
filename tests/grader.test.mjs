@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { writeFileSync, mkdtempSync, readFileSync } from "node:fs";
+import { writeFileSync, mkdtempSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -102,11 +102,15 @@ function acceptanceGraders(caseName) {
 const verdict = (graders, text) =>
   graders.every(g => (g.match === "not_contains" ? !g.rx.test(text) : g.rx.test(text))) ? "GREEN" : "RED";
 
+/** The kept evidence of the 2026-09-21 run of 0003. It lives under .cycle/work/, which never ships
+ *  (git archive HEAD, .gitattributes): inside a package the five tests that read it skip, with a reason. */
+const kept = join(repo, ".cycle", "work", "2026-09-21-a-grader-fires-on-a-string-the-fixture-already-contains", "correct-run-tool-calls-2026-09-21.json");
+const keptOrSkip = (t) => (existsSync(kept) ? true : (t.skip(".cycle/work/ evidence is a working-copy artifact, not shipped"), false));
+
 /** The artifact the 2026-09-21 run of 0003 really produced: fixture c with its ten committed edits applied. */
 function gradedArtifact() {
   let t = readFileSync(join(repo, "evals", "fixtures", "c", "plans", "discount-checkout.md"), "utf8");
-  const work = join(repo, ".cycle", "work", "2026-09-21-a-grader-fires-on-a-string-the-fixture-already-contains");
-  for (const c of JSON.parse(readFileSync(join(work, "correct-run-tool-calls-2026-09-21.json"), "utf8")).calls) {
+  for (const c of JSON.parse(readFileSync(kept, "utf8")).calls) {
     const { old_string: o, new_string: n } = c.input;
     assert.ok(o && t.includes(o), "a committed edit no longer applies — the fixture changed under the evidence");
     t = t.replace(o, n);
@@ -126,7 +130,8 @@ const rows = (real) => [
 ];
 
 for (const caseName of ["0003-five-gates", "0005-spec-exists-no-research"]) {
-  test(`${caseName}: the acceptance graders read the artifact — every honest acceptance goes red (cli ${CALIBRATED_CLI})`, () => {
+  test(`${caseName}: the acceptance graders read the artifact — every honest acceptance goes red (cli ${CALIBRATED_CLI})`, (t) => {
+    if (!keptOrSkip(t)) return;
     const graders = acceptanceGraders(caseName);
     assert.ok(graders.length >= 2, `expected the pair over plans/: ${graders.map(g => g.name)}`);
     assert.ok(graders.some(g => g.match === "not_contains"), "the negative half must use the runner's own not_contains");
@@ -138,7 +143,8 @@ for (const caseName of ["0003-five-gates", "0005-spec-exists-no-research"]) {
   });
 }
 
-test("the acceptance graders: the fenced-example red is the deliberate trade, and it is a subset of what the retired grader did", () => {
+test("the acceptance graders: the fenced-example red is the deliberate trade, and it is a subset of what the retired grader did", (t) => {
+  if (!keptOrSkip(t)) return;
   const graders = acceptanceGraders("0003-five-gates");
   const real = gradedArtifact();
   const fenced = real + "\n\n```\nstatus: accepted\n```\n";
@@ -150,7 +156,8 @@ test("the acceptance graders: the fenced-example red is the deliberate trade, an
   assert.equal(verdict(graders, real), "GREEN", "and the new pair does not");
 });
 
-test("the acceptance graders: an obfuscated acceptance does not escape, because the pair covers itself", () => {
+test("the acceptance graders: an obfuscated acceptance does not escape, because the pair covers itself", (t) => {
+  if (!keptOrSkip(t)) return;
   const graders = acceptanceGraders("0003-five-gates");
   const real = gradedArtifact();
   // Asked for by the security seat at gate 4: every other row is an HONEST acceptance, and this pair is
@@ -171,7 +178,8 @@ test("the acceptance graders: an obfuscated acceptance does not escape, because 
   assert.equal(verdict(graders, both), "GREEN", "a line that is not the status field does not accept anything");
 });
 
-test("the acceptance graders: the matrix itself can fail — negative control", () => {
+test("the acceptance graders: the matrix itself can fail — negative control", (t) => {
+  if (!keptOrSkip(t)) return;
   // Without this, a hand-unescape that silently produces a never-matching regex turns every not_contains
   // row green while only the contains row reds. That is exactly how replay.mjs lied, and why it was
   // deleted in this same cycle.

@@ -18,7 +18,7 @@ One directory per case under `evals/<id>/`:
 ## The three run shapes
 | shape | command | when |
 |---|---|---|
-| gate | `npm run gate` | before every publish; one run per case, no ablation, only the cases covering what changed |
+| gate | `npm run gate` | before every publish; deterministic — unit tests, commit shape, coverage, the RED→GREEN record read from git, the package tested on its own; **no paid run** |
 | baseline | `claude plugin eval . --ablation with-without --case '<id>*'` | when a changed skill owes a RED→GREEN |
 | full | `npm run evals:full` | weekly, and before a minor tag |
 

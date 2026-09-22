@@ -25,8 +25,14 @@ test("council.json: seven default seats, always on, in the order they speak", ()
   assert.deepEqual(council.seats.map(s => s.id), ["minimalist", "user", "maintainer", "payer", "security", "operator", "pollyana"]);
   for (const s of council.seats) assert.ok(s.brief && s.always === true, s.id);
 });
-test("council.json: the repo's own copy is identical to the template", () => {
-  const own = JSON.parse(readFileSync(join(repo, ".cycle", "council.json"), "utf8"));
+// Working-copy artifacts: .cycle/ and plans/ never ship (git archive HEAD, .gitattributes), so inside a
+// package these tests skip with a reason instead of failing on a folder that is not supposed to be there.
+const ownCouncil = join(repo, ".cycle", "council.json");
+const notShipped = (p) => `${p} is a working-copy artifact, not shipped`;
+
+test("council.json: the repo's own copy is identical to the template", (t) => {
+  if (!existsSync(ownCouncil)) return t.skip(notShipped(".cycle/council.json"));
+  const own = JSON.parse(readFileSync(ownCouncil, "utf8"));
   assert.deepEqual(own, council, ".cycle/council.json drifted from templates/council.json");
 });
 /** Each phrase must appear, and after the previous one: the briefs are ordered instructions, not word bags. */
@@ -227,8 +233,9 @@ test("council.json: no bare method-vocabulary word survives as a trigger", () =>
   assert.deepEqual(council.pool.flatMap(p => p.triggers.filter(t => banned.includes(t)).map(t => `${p.id}: ${t}`)), [],
     "these words produced 102 seatings over 19 plan files on 2026-09-20; a trigger is a phrase about a product subject");
 });
-test("council.json: the repo copy and the template are byte-identical, not merely equal when parsed", () => {
-  assert.equal(readFileSync(join(repo, ".cycle", "council.json"), "utf8"), readFileSync(councilPath, "utf8"),
+test("council.json: the repo copy and the template are byte-identical, not merely equal when parsed", (t) => {
+  if (!existsSync(ownCouncil)) return t.skip(notShipped(".cycle/council.json"));
+  assert.equal(readFileSync(ownCouncil, "utf8"), readFileSync(councilPath, "utf8"),
     "the Proof bar runs `diff`; a test that only compares parsed objects passes on indentation drift");
 });
 test("resolver: a repo whose pool triggers differ from the template is told which seats differ", () => {
@@ -264,8 +271,9 @@ test("resolver: a compliance subject named only in the Risks table does NOT seat
   const named = resolve("plans/x.md", repoWith(md), "legal");
   assert.ok(named.seats.some(s => s.id === "legal" && /owner/.test(s.why)), "the escape is the owner naming the seat");
 });
-test("plans written from 2026-09-20 on carry a Goal line and a subject heading", () => {
+test("plans written from 2026-09-20 on carry a Goal line and a subject heading", (t) => {
   const dir = join(repo, "plans");
+  if (!existsSync(dir)) return t.skip(notShipped("plans/"));
   const bad = [];
   for (const f of readdirSync(dir)) {
     if (!/^20\d\d-\d\d-\d\d-/.test(f) || f < "2026-09-20") continue;

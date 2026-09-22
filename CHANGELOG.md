@@ -4,6 +4,21 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-22
+
+The owner asked, after the third gate attempt for 0.7.0: *why do we keep getting stuck at this stage, should it even exist, it is costing me money.* Over three attempts the gate had stopped five times on one publish path — four of them an `llm` judge over a plan a run had grown past 14 kB, the runner printing its long-file warning each time and the gate obeying the vote anyway — for US$26.93 and no tag. What had actually proven the change was the RED→GREEN of the one case covering the changed skill: US$2.58, kept plans and traces. So the gate now checks what can be checked for free, and the paid suite goes where its reds are findings.
+
+### Changed
+- **`npm run gate` is deterministic and never calls the paid runner.** It requires a clean tree; runs the unit suite; resolves the base (no base is a failure); applies the commit-shape rule; reads the coverage map; requires, for every changed method file a case covers, a commit to a covering case's `case.meta.md` on or after the change — the RED→GREEN record, read from git, whose prose says the run or says "no run, and why" (a declared waiver, the shape declared debt already had); extracts `git archive HEAD` into a temp dir and runs `npm test` there; and fails on any shipped file containing this machine's home path. `--threshold` and `--max-cost-usd` left the gate's script and stay on `npm run evals`. Five loop tests went with the loop; eight new ones were seen red on the old script first (`.cycle/work/2026-09-22-the-publish-gate-…/red.txt`).
+- **The paid suite is a monitor.** `npm run evals` and `evals:full` keep their flags, ceiling and ledger; the weekly routine or a person runs them; a red case opens an intent or a branch fixing the case, and never blocks a tag. `docs/CONTRACT.md`, `skills/deploy/SKILL.md`, `skills/evolve/SKILL.md`, `skills/evolve/references/evals.md`, `CONTRIBUTING.md` and `evals/README.md` say so in the same words.
+- **Publish per closed cycle.** `cycle:deploy`: a closed cycle that changed a method file publishes a patch version, and the previous release is tagged locally before the gate runs, so the record rule reads one cycle, not seven.
+
+### Added
+- **`.gitattributes` makes `git archive HEAD` the package**, for the gate and for the publish — one definition. Patterns are anchored at the root: the eval fixtures' own `intent/` and `plans/` ship (unanchored, they did not, and the package lost 31 files before the tag; caught by counting).
+
+### Fixed
+- **The shipped suite tells the truth inside a package.** Eight tests read working-copy artifacts (`.cycle/council.json`, `plans/`, the kept evidence under `.cycle/work/`); in a clone of the public repository they failed with `ENOENT`, 0.6.1 and 0.7.0 alike. They now skip with a reason: 138 pass, 8 skipped, 0 failed inside `git archive HEAD`.
+
 ## [0.7.0] - 2026-09-22
 
 Seven cycles that had been sitting unpublished on `main` since 2026-09-13, released together (the three that gave the version its shape first): a bar a repository can be held to, a rollout that can be undone, and — the reason the version is minor and not a patch — **what the agent writes to the person reading it**. The method had rules for the documents an engineer picks up in six months, and none for the message the owner reads now, on a phone, between meetings, to decide.

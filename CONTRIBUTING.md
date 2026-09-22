@@ -15,7 +15,7 @@ A skill or an agent is a prompt. The only proof it works is what the agent does 
 - **GREEN**: what it did with your change, same prompt.
 - For `hooks/`: the case in `tests/hooks.test.mjs` that fails before the change and passes after it. `npm test` must pass on the PR.
 
-No baseline, no review.
+No baseline, no review. In the method repository the gate checks it: a changed method file whose covering case's `case.meta.md` has no commit after the change does not publish; that commit says the run, or says "no run, and why" (`docs/CONTRACT.md`, "The gate").
 
 ## PRs from the evolve stage
 

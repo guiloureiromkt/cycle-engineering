@@ -53,6 +53,13 @@ Prefer deterministic graders. Every `llm` grader is named in the case's `case.me
 ### A judge over a long file votes noise
 On a 36,285-character plan, three judges voted FAIL on a run that had done nothing wrong — and the runner said so itself in the grader's own explanation: *"long file (36285 chars); llm judges are noisy on long inputs, prefer a regex grader for large artifacts"*. Same family as the trace trap below: **the bigger the input, the less a judge is reading it.** For a large artifact, assert the two or three things that actually distinguish a good run with `regex`, and write the rest down as a named hand-check in the case's `case.meta.md`.
 
+**A judge's FAIL is a finding, not a blocked tag (2026-09-22).** `npm run gate` no longer runs any case: five reds
+blocked one publish over three attempts and four of them were a judge over a plan a run had grown, the runner
+printing this very warning each time. A red `llm` grader in `npm run evals` opens an intent (`cycle:evolve`,
+`cycle:maintain`) or a branch fixing the case; it never decides whether a tag ships. The runner's flags
+(`--scaffold`, `--ablation`, `--threshold`, `--max-cost-usd`, `--trust-plugin`, `--case`) are what `npm run evals`
+speaks; check `claude plugin eval --help` when the CLI updates — the gate no longer preflights them.
+
 ### What the eval sandbox does not have
 `node` and `npm` are **not installed** in the run's sandbox — more precisely, `node`, `npm` and `npx` on `PATH` are symlinks into a directory the sandbox cannot read, so they resolve as broken, and no `bun` or `deno` either (a run reported this itself on 13/09). A case cannot expect `scripts/*.mjs` or `npm test` to run there; a good run applies the logic by hand and says so, and the criteria must accept that. Found on 2026-09-13 when a run that did everything right was failed by a judge demanding the resolver's printed summary.
 
@@ -78,9 +85,9 @@ The first port of `0002` scored **1.00** and proved nothing: `scaffold_script` h
 ## Running
 
 ```bash
-npm run evals            # every case once, no ablation arm, ceiling $25 — what the gate uses
+npm run evals            # every case once, no ablation arm, ceiling $25 — the monitor; the gate never runs it
 npm run evals:full       # three runs per case with the no-plugin arm — weekly, and before a minor tag
-npm run gate             # npm test, the commit-shape rule, then the cases covering what changed
+npm run gate             # deterministic and free: clean tree, npm test, commit shape, coverage, the RED→GREEN record from git, the package (git archive HEAD) tested on its own
 npm run port-check       # nothing was lost when the JSON cases retired
 npm run grade-research research/<name>.md [specs/<name>.md]   # machine checks on a research artifact
 ```
