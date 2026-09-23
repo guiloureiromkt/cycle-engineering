@@ -4,6 +4,23 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-23
+
+A plan the owner accepted can run to the end with nobody watching, and come back finished or stopped at a named point. The owner asked for it on 2026-09-23, after moving the owner's sessions to Claude Opus 5.5 — "sinto falta de coisas que são mais autônomas e mais longas, com tarefas sequenciais".
+
+### Changed
+- **`cycle:executing-plans` and `cycle:subagent-driven-development` are refreshed from obra/superpowers v6.4.1** (commit `5bf4e78`), which rebuilt both for continuous execution: no check-ins between tasks, ambiguities decided and ledgered as `Ruling: <what> — <why> — <cost if wrong>`, one `Task <N>: complete (commits a..b, tests: <cmd> → <result>)` line per task written only when the tests pass, resume from the first task without that line, one final review, a final message with every ruling and deferred minor. Imported verbatim in one commit and diverged in the next; `.cycle/work/2026-09-23-…/upstream-diff.md` is the whole divergence. The `Source:` lines now name the upstream **tree** hash and say so — the hashes they carried before were never commits.
+- **The cycle's divergence:** the ledger is `.cycle/work/<plan>/run.md`, versioned and kept after the run (upstream deletes its workspace); the scripts find the plan's repository from any directory, since sessions are often rooted elsewhere; `task-brief` reads `Tarefa N` as well as `Task N`, keeps `Task 7` from swallowing `Task 7b`, and gives a plan with no task heading as one whole brief (35 of 89 accepted plans across seven repositories had none); two stops added to upstream's four (a departure touching a gate trigger the plan did not name; the owner's budget); the owner's word is quoted, never produced, when a subagent asks for an authorization; and **unattended mode**, started only by the owner's own sentence, which writes a header with that sentence verbatim and ends a stop with a `Stopped:` line instead of a question.
+- **`cycle:build`** says how a plan runs to the end, and prints a ready `/goal` line for an owner who wants the host to keep the session going. No plugin hook keeps a session running: a Stop hook was designed and killed at gate 2, because the owner's sessions are rooted in the owner's notes vault — where it would never have found the ledger — and because a run cut short would have handed its open tasks to the next unrelated session in that repository.
+- **`session-start`** names an unattended run left open in the session's own repository, with its next task.
+- **The gate runs its commands in a plain shell.** A login shell cost 0.87 s per call on the owner's machine; the gate's tests went from 121 s to 2 s.
+
+### Fixed
+- Upstream's `task-done` died after a passing test whose command printed nothing (`grep` over an empty log under `set -euo pipefail`) and recorded nothing. Guarded here.
+
+### Proof
+Nine tests for the scripts and four for the session-start line, each seen red; a real unattended run of a four-task plan in a scratch repository, kept under `.cycle/work/2026-09-23-an-accepted-plan-runs-to-the-end-unattended/real-run/`.
+
 ## [0.7.1] - 2026-09-22
 
 The owner asked, after the third gate attempt for 0.7.0: *why do we keep getting stuck at this stage, should it even exist, it is costing me money.* Over three attempts the gate had stopped five times on one publish path — four of them an `llm` judge over a plan a run had grown past 14 kB, the runner printing its long-file warning each time and the gate obeying the vote anyway — for US$26.93 and no tag. What had actually proven the change was the RED→GREEN of the one case covering the changed skill: US$2.58, kept plans and traces. So the gate now checks what can be checked for free, and the paid suite goes where its reds are findings.

@@ -30,7 +30,10 @@ const cwd = process.cwd();
 const METHOD = /^(skills|agents|hooks|scripts|templates)\//;
 const CASE = /^evals\/\d{4}-/;
 
-const sh = (cmd, opts = {}) => spawnSync('bash', ['-lc', cmd], { cwd, encoding: 'utf8', ...opts });
+// A plain shell, not a login shell: `npm run gate` already carries the PATH, and a login shell
+// re-reads the machine's profile on every call (0.87 s here on 2026-09-23 against 0.002 s; the
+// gate's tests make dozens of calls, which took tests/gate.test.mjs from seconds to 121 s).
+const sh = (cmd, opts = {}) => spawnSync('bash', ['-c', cmd], { cwd, encoding: 'utf8', ...opts });
 const git = (a) => sh(`git ${a}`).stdout.trim();
 const fail = (msg, extra = {}) => { console.error(`\n✗ gate: ${msg}`); report({ ok: false, reason: msg, ...extra }); process.exit(1); };
 let reported = false;
@@ -117,7 +120,7 @@ try {
   const a = sh(`git archive HEAD | tar -x -C '${pkg}'`);
   if (a.status !== 0) fail(`could not assemble the package: ${a.stderr.trim()}`, { base, changed, cases });
   const pkgTest = process.env.CYCLE_GATE_PACKAGE_TEST_CMD ?? 'npm test';
-  const p = spawnSync('bash', ['-lc', pkgTest], { cwd: pkg, encoding: 'utf8' });
+  const p = spawnSync('bash', ['-c', pkgTest], { cwd: pkg, encoding: 'utf8' });
   if (p.status !== 0) {
     const tail = (p.stdout + p.stderr).split('\n').filter(Boolean).slice(-20).join('\n  ');
     fail(`${pkgTest} is red inside the package (git archive HEAD) — the shipped suite must be green on its own:\n  ${tail}`, { base, changed, cases, records, package: { tests: 'red' } });

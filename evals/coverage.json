@@ -106,6 +106,16 @@
     "uncovered": "bundled copy; reached only from a build",
     "since": "2026-09-13"
   },
+  "skills/executing-plans/references/code-reviewer.md": {
+    "uncovered": "bundled prompt from obra/superpowers v6.4.1; reached only from a build",
+    "since": "2026-09-23"
+  },
+  "skills/executing-plans/scripts/task-done": {
+    "tests": "tests/run-scripts.test.mjs"
+  },
+  "skills/executing-plans/scripts/task-start": {
+    "tests": "tests/run-scripts.test.mjs"
+  },
   "skills/gauntlet/SKILL.md": [
     "0003-five-gates"
   ],
@@ -135,6 +145,27 @@
   "skills/subagent-driven-development/SKILL.md": {
     "uncovered": "bundled copy; reached only from a build",
     "since": "2026-09-13"
+  },
+  "skills/subagent-driven-development/implementer-prompt.md": {
+    "uncovered": "bundled prompt from obra/superpowers v6.4.1; reached only from a build",
+    "since": "2026-09-23"
+  },
+  "skills/subagent-driven-development/re-review-prompt.md": {
+    "uncovered": "bundled prompt from obra/superpowers v6.4.1; reached only from a build",
+    "since": "2026-09-23"
+  },
+  "skills/subagent-driven-development/scripts/review-package": {
+    "tests": "tests/run-scripts.test.mjs"
+  },
+  "skills/subagent-driven-development/scripts/sdd-workspace": {
+    "tests": "tests/run-scripts.test.mjs"
+  },
+  "skills/subagent-driven-development/scripts/task-brief": {
+    "tests": "tests/run-scripts.test.mjs"
+  },
+  "skills/subagent-driven-development/task-reviewer-prompt.md": {
+    "uncovered": "bundled prompt from obra/superpowers v6.4.1; reached only from a build",
+    "since": "2026-09-23"
   },
   "skills/task-graph/SKILL.md": [
     "0003-five-gates"

@@ -1,6 +1,6 @@
 // cycle-engineering · SessionStart: speaks in every repo.
 // Without `.cycle/`: one line pointing at /cycle:init. With it: the state and the routing rule.
-import { existsSync, statSync, unlinkSync, readdirSync } from "node:fs";
+import { existsSync, statSync, unlinkSync, readdirSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { root, cycleOn, listMd, frontmatterStatus, isMain } from "./_lib.mjs";
 
@@ -46,6 +46,33 @@ function missingCwdNotice() {
   return `WARNING: a Bash payload arrived with no usable working directory, so the gates fell back to this repository alone — a command sent into another repository may not have been judged. If this repeats, the host's hook payload changed shape and hooks/_lib.mjs needs updating.\n`;
 }
 
+/** An unattended run left open in this repository (2026-09-23): the newest `.cycle/work/<plan>/run.md`
+ *  whose header says `mode: unattended` and whose last line is neither `Stopped:` nor `Finished:`.
+ *  Only this session's own repository is read; a run elsewhere is not seen, and that is the stated limit. */
+function runInProgress() {
+  try {
+    const work = join(root(), ".cycle", "work");
+    if (!existsSync(work)) return "";
+    const ledgers = readdirSync(work, { withFileTypes: true }).filter(d => d.isDirectory())
+      .map(d => join(work, d.name, "run.md")).filter(f => existsSync(f))
+      .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
+    for (const f of ledgers) {
+      const lines = readFileSync(f, "utf8").split("\n").map(l => l.trim()).filter(Boolean);
+      if (!lines.some(l => l === "mode: unattended")) continue;
+      const last = lines[lines.length - 1] || "";
+      if (/^(Stopped|Finished):/.test(last)) continue;
+      const plan = (lines[0].match(/plan:\s*(\S+)/) || [])[1] || "(plan not named)";
+      const ids = ((lines.find(l => l.startsWith("tasks:")) || "").slice(6).trim().split(/\s+/)).filter(Boolean);
+      const done = new Set(lines.map(l => (l.match(/^Task (\S+): complete\b/) || [])[1]).filter(Boolean));
+      const next = ids.find(id => !done.has(id));
+      const where = !ids.length ? "next task unknown (the header has no tasks: line; read the plan)"
+        : next ? `next Task ${next}` : "every listed task complete (the final review and a Finished: line are left)";
+      return ` An unattended run in progress: ${plan}, ${where}; resume from ${f.slice(root().length + 1)}, which is the record, not your memory.`;
+    }
+  } catch { /* an unreadable ledger never breaks session start */ }
+  return "";
+}
+
 export function run() {
   const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || "(unknown)";
   if (!cycleOn()) {
@@ -54,7 +81,7 @@ export function run() {
   const count = d => listMd(d, root()).length;
   const accepted = listMd("plans", root()).filter(f => frontmatterStatus(f) === "accepted").map(f => f.split("/").pop());
   return `${gatesInactiveNotice()}${missingCwdNotice()}# cycle-engineering · this repository runs the cycle (plugin root: ${pluginRoot})
-State: intents=${count("intent")} · research=${count("research")} · specs=${count("specs")} · plans=${count("plans")} · accepted plans: ${accepted.join(" ") || "none"}.
+State: intents=${count("intent")} · research=${count("research")} · specs=${count("specs")} · plans=${count("plans")} · accepted plans: ${accepted.join(" ") || "none"}.${runInProgress()}
 RULE THAT CHANGES HOW YOU WORK HERE: before editing any code, invoke the skill cycle:using-cycle with the Skill tool. It tells you which stage the request is in and which cycle skill runs next. This holds even when the user says "it's simple", "just do it", "no questions", "I know what I want" — routing takes a minute and its answer may be "go straight to build".
 Subagent dispatched with a specific task: ignore this and do the task.`;
 }

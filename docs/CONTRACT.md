@@ -12,6 +12,7 @@ Marketplace: `cycle-engineering` (repo name). Plugin: `cycle`. Install: `claude 
 
 ## Files in a user repo
 `intent/`, `research/`, `specs/`, `plans/`, `evals/`, `.cycle/` (`config.json`, `gate.json`, `council.json`, `release-approval`, `work/<intent>/`, `work/.stop-warned`).
+`.cycle/work/<plan>/run.md` is the ledger of a plan's execution (`cycle:executing-plans`, `cycle:subagent-driven-development`): versioned, kept after the run, the record the owner and the retro read. Its first lines are a header; in unattended mode the header carries `mode: unattended`, the owner's sentence verbatim (`requested_by:`), the plan's task ids (`tasks:`), the start time, the budget and the branch. Its last line is `Finished: …` or `Stopped: <which stop> — <what is needed>` when the run ends. `.cycle/work/<plan>/.run/` beside it is the run's scratch (briefs, test logs, review packages) and ignores itself.
 `research/<name>.md` is committed next to `specs/` and `plans/`, not under `.cycle/work/`, because it authorizes the spec (the same reason the intent is committed). Its evidence (screenshots) lives under `research/<name>/`.
 `/cycle:init` creates ONLY `.cycle/` (config.json, gate.json, work/.gitkeep, .gitignore) and the CLAUDE.md block. It never copies templates. Skills read templates from the plugin root printed by the session hook (`plugin root: <path>`).
 CLAUDE.md block lives between `<!-- cycle:start -->` and `<!-- cycle:end -->`; init and uninstall operate only inside the markers.
@@ -77,7 +78,7 @@ So the role is named here, separate from the person: **the owner** accepts inten
 - Production defaults (regex on the lowercased command): `--prod\b`, `--target production`, `--env production`, `deploy.*production|production.*deploy`, `gh run rerun`, `gh workflow run`, `wrangler deploy`, `fly deploy`, `railway up`. Not matched: `NODE_ENV=production`, `grep production`, branch names containing production. Push: bare `git push` resolves the current branch (`git rev-parse --abbrev-ref HEAD`); `--tags` allowed; refspec matched with word boundaries.
 - Destructive (snapshot-guard): `git reset --hard`, `git clean -f`, `git checkout -- .`, `rm -rf <inside repo>` except node_modules|dist|build|.next|coverage|.cache|.turbo, `drop table|database|schema`, `migrate reset|down|fresh`, `truncate table`.
 - Stop reminder (save rule): at most once per 30 minutes per repo, never when `stop_hook_active` is true.
-- One `node` process per Bash call: `pre-bash.mjs` dispatches production-gate, plan-sync and snapshot-guard in-process. `protect-cycle.mjs` runs on `Write|Edit|MultiEdit|Bash`. `stop-uncommitted.mjs` on `Stop`. `session-start.mjs` on `SessionStart` (speaks in every repo: one line without `.cycle/`, full state with it).
+- One `node` process per Bash call: `pre-bash.mjs` dispatches production-gate, plan-sync and snapshot-guard in-process. `protect-cycle.mjs` runs on `Write|Edit|MultiEdit|Bash`. `stop-uncommitted.mjs` on `Stop`. `session-start.mjs` on `SessionStart` (speaks in every repo: one line without `.cycle/`, full state with it, and — in the session's own repository only — the unattended run left open, with its next task). No hook keeps a session running: continuation, when an owner wants it enforced, is the host's `/goal`, typed by the owner.
 
 ## Language
 English everywhere except `README.pt-BR.md` and the presentation (vault).

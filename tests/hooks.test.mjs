@@ -423,3 +423,38 @@ test("_lib readJson: invalid .cycle/config.json → 2 (fail loud, not silent)", 
   assert.equal(r.status, 2);
   assert.match(r.stderr, /not valid JSON/);
 });
+
+// ───────────── session-start · a run in progress (2026-09-23) ─────────────
+// The session that opens after a reboot has to learn there is a run to resume, without reading anything.
+const ledger = (d, body) => write(d, ".cycle/work/x/run.md", body);
+const HEADER = "# cycle run — plan: plans/x.md\nmode: unattended\nrequested_by: \"roda sem mim\"\ntasks: 1 2 3\nstarted: 2026-09-23T22:00:00Z\n";
+const ctxOf = (d) => JSON.parse(runHook("session-start.mjs", {}, d).stdout).hookSpecificOutput.additionalContext;
+test("session-start: an unattended run with open tasks is named, with its next task", () => {
+  const d = repo({ plan: "accepted" });
+  ledger(d, HEADER + "Task 1: complete (commits aaaaaaa..bbbbbbb, tests: npm test → ok)\n");
+  const ctx = ctxOf(d);
+  assert.match(ctx, /run in progress/i);
+  assert.match(ctx, /plans\/x\.md/);
+  assert.match(ctx, /Task 2/);
+});
+test("session-start: a run whose last line is Stopped: or Finished: is not in progress", () => {
+  for (const last of ["Stopped: needs the owner's API key\n", "Finished: all tasks complete\n"]) {
+    const d = repo({ plan: "accepted" });
+    ledger(d, HEADER + "Task 1: complete (commits aaaaaaa..bbbbbbb, tests: npm test → ok)\n" + last);
+    assert.doesNotMatch(ctxOf(d), /run in progress/i, last);
+  }
+});
+test("session-start: a ledger without an unattended header says nothing about a run", () => {
+  const d = repo({ plan: "accepted" });
+  ledger(d, "# SDD ledger — plan: plans/x.md\nTask 1: complete (commits aaaaaaa..bbbbbbb, tests: t → ok)\n");
+  assert.doesNotMatch(ctxOf(d), /run in progress/i);
+});
+
+test("session-start: an unattended ledger without a tasks: line says the tasks are unknown, never 'all complete'", () => {
+  const d = repo({ plan: "accepted" });
+  ledger(d, "# cycle run — plan: plans/x.md\nmode: unattended\nrequested_by: \"roda sem mim\"\nTask 1: complete (commits aaaaaaa..bbbbbbb, tests: t → ok)\n");
+  const ctx = ctxOf(d);
+  assert.match(ctx, /run in progress/i);
+  assert.match(ctx, /no tasks: line/i);
+  assert.doesNotMatch(ctx, /all complete/i);
+});
