@@ -12,3 +12,5 @@
 | — | `the-router-fired` (tool_used with input_match `cycle:using-cycle`, arm with-only): the router actually fired |
 
 **hand-checks:** none.
+
+**2026-10-16 · no run — a declared waiver for one key added to `templates/config.json`: `products: []`.** The key is read only by `scripts/retro.mjs --repeats --across` and by the weekly evolve routine, in the method repository (`method_repo: "."`); a product repository leaves it empty and nothing in routing, spec, plan or build reads it. This case proves the router sends an accepted intent with a done research to `cycle:spec`; its fixture's config is the template's, and an empty list in it changes no decision the graders look at. The behaviour the key enables is proved deterministically in `tests/retro.test.mjs` (`--across` with a products list, a missing path reported, worktree copies collapsed), seen red before the script read the key and green after. A paid run here would measure a key the run never touches.

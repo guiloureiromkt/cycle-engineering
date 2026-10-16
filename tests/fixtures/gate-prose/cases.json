@@ -1,0 +1,520 @@
+{
+  "recorded_on": "7029789 (hooks of that commit, extracted; the file was recorded from 45b9c2b)",
+  "cases": [
+    {
+      "id": "heredoc-prose-deploy-production",
+      "command": "cat > /tmp/x.md <<'E'\n## Risks\nthe deploy to production failed\nE",
+      "expect": "ask",
+      "class": "prose-only match → ask",
+      "before": "deny",
+      "loosening": "prose in a quoted-tag heredoc; nothing runs; the owner answers"
+    },
+    {
+      "id": "unquoted-heredoc-prose-stays-judged",
+      "command": "cat > /tmp/x.md <<E\nthe deploy to production failed\nE",
+      "expect": "deny",
+      "class": "never-looser: an expanding body is judged",
+      "before": "deny"
+    },
+    {
+      "id": "bash-fed-heredoc-deploy",
+      "command": "bash <<'E'\nfly deploy\nE",
+      "expect": "deny",
+      "class": "consumer in the heredoc's own segment: body judged",
+      "before": "deny"
+    },
+    {
+      "id": "env-production-in-heredoc",
+      "command": "cat > .env.example <<'E'\nAPP_ENV=production\n# deploy with: ./deploy.sh\nE",
+      "expect": "allow",
+      "class": "never-looser: allow today",
+      "before": "allow"
+    },
+    {
+      "id": "grep-cites-approval-file",
+      "command": "grep -n \"release-approval\" hooks/*.mjs",
+      "expect": "allow",
+      "class": "read-only, no writer",
+      "before": "allow"
+    },
+    {
+      "id": "pr-body-cites-approval-file",
+      "command": "gh pr create --title x --body \"does not touch .cycle/release-approval\"",
+      "expect": "allow",
+      "class": "sink quote; no writer",
+      "before": "deny",
+      "loosening": "a PR body is a sink quote and gh writes no file; the mention is not a write"
+    },
+    {
+      "id": "snapshot-note-in-heredoc",
+      "command": "cat > .cycle/work/x/snapshot.md <<'E'\nsaved before git reset --hard\nE",
+      "expect": "ask",
+      "class": "prose-only match → ask",
+      "before": "deny",
+      "loosening": "prose in a quoted-tag heredoc; the owner answers"
+    },
+    {
+      "id": "worktree-remove-force",
+      "command": "git worktree remove --force ../wt",
+      "expect": "allow",
+      "class": "never-looser: allow today",
+      "before": "allow"
+    },
+    {
+      "id": "grep-cites-gate-pattern",
+      "command": "grep -rn provisionar-instancia.sh docs/",
+      "patterns": [
+        "provisionar-instancia.sh"
+      ],
+      "expect": "allow",
+      "class": "read-only command → substring patterns skipped",
+      "before": "deny",
+      "loosening": "a read-only command with no consumer, subshell or redirect cannot deploy"
+    },
+    {
+      "id": "grep-quoted-multiword-pattern",
+      "command": "grep -rn \"systemctl restart\" docs/",
+      "patterns": [
+        "systemctl restart"
+      ],
+      "expect": "allow",
+      "class": "sink quote + read-only",
+      "before": "deny",
+      "loosening": "a read-only command with a sink quote cannot deploy"
+    },
+    {
+      "id": "grep-pattern-piped-to-sh",
+      "command": "grep -rn provisionar-instancia.sh docs/ | sh",
+      "patterns": [
+        "provisionar-instancia.sh"
+      ],
+      "expect": "deny",
+      "class": "consumer present",
+      "before": "deny"
+    },
+    {
+      "id": "cat-pattern-piped-to-ssh",
+      "command": "cat provisionar-instancia.sh | ssh root@vps",
+      "patterns": [
+        "provisionar-instancia.sh"
+      ],
+      "expect": "deny",
+      "class": "ssh is a consumer",
+      "before": "deny"
+    },
+    {
+      "id": "find-exec-pattern",
+      "command": "find . -exec ./provisionar-instancia.sh {} \\;",
+      "patterns": [
+        "provisionar-instancia.sh"
+      ],
+      "expect": "deny",
+      "class": "-exec",
+      "before": "deny"
+    },
+    {
+      "id": "echo-subshell-pattern",
+      "command": "echo $(./provisionar-instancia.sh x)",
+      "patterns": [
+        "provisionar-instancia.sh"
+      ],
+      "expect": "deny",
+      "class": "$()",
+      "before": "deny"
+    },
+    {
+      "id": "checkout-b-then-push-head",
+      "command": "git checkout -b feat/x && git push origin HEAD",
+      "expect": "allow",
+      "class": "push judged on the branch it will have",
+      "before": "deny",
+      "loosening": "the push lands on feat/x, the branch the segment will have; main is never touched"
+    },
+    {
+      "id": "checkout-b-then-push-head-to-main",
+      "command": "git checkout -b feat/x && git push origin HEAD:main",
+      "expect": "deny",
+      "class": "refspec destination is protected",
+      "before": "deny"
+    },
+    {
+      "id": "checkout-b-semicolon-push-head",
+      "command": "git checkout -b feat/x; git push origin HEAD",
+      "expect": "deny",
+      "class": "after ; the branch is unknown and the seed is protected",
+      "before": "deny"
+    },
+    {
+      "id": "checkout-file-then-push",
+      "command": "git checkout README.md && git push",
+      "expect": "deny",
+      "class": "README.md is not a branch; seed main",
+      "before": "deny"
+    },
+    {
+      "id": "cd-other-repo-push-own-branch",
+      "command": "cd /tmp/gated-b && git push origin HEAD",
+      "branch_b": "master",
+      "expect": "allow",
+      "class": "branch seeded in b (master, not protected)",
+      "before": "allow",
+      "_b": "/tmp/gate-prose-zHzVwh"
+    },
+    {
+      "id": "cd-other-repo-push-main",
+      "command": "cd /tmp/gated-b && git push origin HEAD",
+      "branch_b": "main",
+      "expect": "deny",
+      "class": "b is on main",
+      "before": "deny",
+      "_b": "/tmp/gate-prose-Ig1ePO"
+    },
+    {
+      "id": "vault-note-mentions-workflow-run",
+      "command": "cat >> notes.md <<'E'\nrun it with gh workflow run deploy.yml\nE",
+      "expect": "ask",
+      "class": "prose-only match → ask",
+      "before": "deny",
+      "loosening": "prose in a quoted-tag heredoc; the owner answers"
+    },
+    {
+      "id": "cd-elsewhere-deploy-then-back",
+      "command": "cd /tmp/other && ./deploy.sh --prod && cd /tmp/gated && echo done",
+      "expect": "deny",
+      "class": "union rule",
+      "before": "deny"
+    },
+    {
+      "id": "two-repos-two-hits-one-approval",
+      "command": "./deploy.sh --prod && cd /tmp/gated-b && git push origin main",
+      "approval_in_a": true,
+      "expect": "deny",
+      "class": "every hit's repo needs approval",
+      "before": "deny",
+      "_b": "/tmp/gate-prose-XTymuD"
+    },
+    {
+      "id": "commit-message-says-deploy-production",
+      "command": "git commit -m \"deploy to production notes\"",
+      "expect": "ask",
+      "class": "sink quote → grey",
+      "before": "deny",
+      "loosening": "a commit message is a sink quote; the owner answers"
+    },
+    {
+      "id": "commit-message-with-subshell",
+      "command": "git commit -m \"$(./deploy.sh --prod)\"",
+      "expect": "deny",
+      "class": "not inert",
+      "before": "deny"
+    },
+    {
+      "id": "python-heredoc-with-reset-hard-string",
+      "command": "python3 - <<'E'\nprint('git reset --hard is bad')\nE",
+      "expect": "ask",
+      "class": "prose-only match → ask",
+      "before": "deny",
+      "loosening": "prose in a quoted-tag heredoc; the owner answers"
+    },
+    {
+      "id": "echo-writes-approval-file",
+      "command": "echo \"gui · 2026-10-16 · x\" > .cycle/release-approval",
+      "expect": "deny",
+      "class": "write to the path",
+      "before": "deny"
+    },
+    {
+      "id": "echo-writes-quoted-approval-path",
+      "command": "echo x > \".cycle/release-approval\"",
+      "expect": "deny",
+      "class": "single-token quote stays executable",
+      "before": "deny"
+    },
+    {
+      "id": "echo-writes-approval-no-space",
+      "command": "echo x >.cycle/release-approval",
+      "expect": "deny",
+      "class": "write to the path",
+      "before": "deny"
+    },
+    {
+      "id": "cd-cycle-then-write-bare-name",
+      "command": "cd .cycle && echo x > release-approval",
+      "expect": "deny",
+      "class": "bare name with a redirect",
+      "before": "deny"
+    },
+    {
+      "id": "var-then-write-approval",
+      "command": "T=.cycle/release-approval; echo x > $T",
+      "expect": "deny",
+      "class": "name in executable text with a redirect anywhere",
+      "before": "deny"
+    },
+    {
+      "id": "subshell-touch-approval",
+      "command": "echo \"$(touch .cycle/release-approval)\"",
+      "expect": "deny",
+      "class": "$() is a writer",
+      "before": "deny"
+    },
+    {
+      "id": "tee-quoted-approval-path",
+      "command": "tee \"/tmp/gated/.cycle/release-approval\" < /dev/null",
+      "expect": "deny",
+      "class": "program tee + path",
+      "before": "deny"
+    },
+    {
+      "id": "plain-push-to-main",
+      "command": "git push origin main",
+      "expect": "deny",
+      "class": "never-looser",
+      "before": "deny"
+    },
+    {
+      "id": "git-C-push-main",
+      "command": "git -C /tmp/gated push origin main",
+      "expect": "deny",
+      "class": "tightening: -C push",
+      "before": "allow"
+    },
+    {
+      "id": "plain-prod-flag",
+      "command": "vercel --prod",
+      "expect": "deny",
+      "class": "never-looser",
+      "before": "deny"
+    },
+    {
+      "id": "plain-reset-hard",
+      "command": "git reset --hard HEAD~1",
+      "expect": "deny",
+      "class": "never-looser",
+      "before": "deny"
+    },
+    {
+      "id": "unknown-branch-then-push",
+      "command": "git checkout - && git push origin HEAD",
+      "expect": "deny",
+      "class": "unknown branch, protected seed",
+      "before": "deny"
+    },
+    {
+      "id": "ssh-quoted-command-deploy",
+      "command": "ssh root@1.2.3.4 \"cd /opt/command && tar -x\" < /tmp/d.tar",
+      "patterns": [
+        "tar -x"
+      ],
+      "expect": "deny",
+      "class": "quotes are judged: the owner's real Command deploy",
+      "before": "deny"
+    },
+    {
+      "id": "ssh-with-options-quoted-deploy",
+      "command": "ssh -p 2222 -i ~/.ssh/k root@1.2.3.4 \"cd /opt/command && tar -x\"",
+      "patterns": [
+        "tar -x"
+      ],
+      "expect": "deny",
+      "class": "quotes are judged",
+      "before": "deny"
+    },
+    {
+      "id": "ssh-quoted-docker-compose",
+      "command": "ssh root@1.2.3.4 \"docker compose -p command up -d\"",
+      "patterns": [
+        "docker compose -p command"
+      ],
+      "expect": "deny",
+      "class": "quotes are judged",
+      "before": "deny"
+    },
+    {
+      "id": "bash-c-quoted-deploy",
+      "command": "bash -c \"./deploy.sh --prod\"",
+      "expect": "deny",
+      "class": "quotes are judged",
+      "before": "deny"
+    },
+    {
+      "id": "bash-login-c-quoted-deploy",
+      "command": "bash --login -c \"./deploy.sh --prod\"",
+      "expect": "deny",
+      "class": "quotes are judged",
+      "before": "deny"
+    },
+    {
+      "id": "docker-exec-sh-c-deploy",
+      "command": "docker exec c sh -c \"fly deploy\"",
+      "expect": "deny",
+      "class": "quotes are judged",
+      "before": "deny"
+    },
+    {
+      "id": "xargs-sh-c-deploy",
+      "command": "echo x | xargs -I{} sh -c \"fly deploy\"",
+      "expect": "deny",
+      "class": "consumer present; quotes kept",
+      "before": "deny"
+    },
+    {
+      "id": "printf-piped-to-sh",
+      "command": "printf '%s' \"fly deploy\" | sh",
+      "expect": "deny",
+      "class": "consumer present: sink quotes kept",
+      "before": "deny"
+    },
+    {
+      "id": "var-command-deploy",
+      "command": "CMD=\"fly deploy\"; $CMD",
+      "expect": "deny",
+      "class": "an assignment is not a sink",
+      "before": "deny"
+    },
+    {
+      "id": "psql-drop-table",
+      "command": "psql -c \"DROP TABLE x\"",
+      "expect": "deny",
+      "class": "snapshot guard; psql is not a sink",
+      "before": "deny"
+    },
+    {
+      "id": "echo-subshell-fly-deploy",
+      "command": "echo \"$(fly deploy)\"",
+      "expect": "deny",
+      "class": "not inert",
+      "before": "deny"
+    },
+    {
+      "id": "backtick-comment-trick",
+      "command": "echo `true # `; fly deploy",
+      "expect": "deny",
+      "class": "# inside a backtick is not a comment",
+      "before": "deny"
+    },
+    {
+      "id": "npm-run-quoted-deploy-production",
+      "command": "npm run \"deploy:production\"",
+      "expect": "deny",
+      "class": "npm is not a sink: the quote is judged",
+      "before": "deny"
+    },
+    {
+      "id": "git-push-with-token-url",
+      "command": "git push https://u:tok@example.com/x.git main",
+      "expect": "deny",
+      "class": "never-looser; gate.log must not hold tok",
+      "before": "deny"
+    },
+    {
+      "id": "heredoc-then-real-push",
+      "command": "cat > n.md <<'E'\ndeploy to production\nE\ngit push origin main",
+      "expect": "deny",
+      "class": "deny wins over ask",
+      "before": "deny"
+    },
+    {
+      "id": "ansi-c-quote-hides-push",
+      "command": "echo $'a\\' # '; git push origin main",
+      "expect": "deny",
+      "class": "$'…' is not a plain quote → fallback, whole string",
+      "before": "deny"
+    },
+    {
+      "id": "ansi-c-quote-hides-approval-write",
+      "command": "echo $'a\\' # '; echo x > .cycle/release-approval",
+      "expect": "deny",
+      "class": "$'…' → fallback",
+      "before": "deny"
+    },
+    {
+      "id": "heredoc-backslash-line-then-push",
+      "command": "cat > n.md <<'E'\nnote \\\nE\ngit push origin main\nE",
+      "expect": "deny",
+      "class": "no line continuation inside a quoted-tag heredoc body",
+      "before": "deny"
+    },
+    {
+      "id": "heredoc-backslash-line-then-approval-write",
+      "command": "cat <<'E' | head\nnote \\\nE\necho x > .cycle/release-approval\nE",
+      "expect": "deny",
+      "class": "no line continuation inside a quoted-tag heredoc body",
+      "before": "deny"
+    },
+    {
+      "id": "two-repos-two-resets-one-snapshot",
+      "command": "git reset --hard HEAD && cd /tmp/gated-b && git reset --hard HEAD",
+      "snapshot_in_a": true,
+      "expect": "deny",
+      "class": "every destructive hit needs its repo's snapshot",
+      "before": "deny",
+      "_b": "/tmp/gate-prose-nQYR50"
+    },
+    {
+      "id": "ssh-fed-heredoc-tar",
+      "command": "ssh root@vps <<'E'\ncd /opt/command && tar -x\nE",
+      "patterns": [
+        "tar -x"
+      ],
+      "expect": "deny",
+      "class": "a quoted-tag heredoc fed to a consumer is executable",
+      "before": "deny"
+    },
+    {
+      "id": "cat-heredoc-piped-to-bash",
+      "command": "cat <<'E' | bash\nfly deploy\nE",
+      "expect": "deny",
+      "class": "consumer: heredoc body judged",
+      "before": "deny"
+    },
+    {
+      "id": "bash-s-heredoc",
+      "command": "bash -s <<'E'\nfly deploy\nE",
+      "expect": "deny",
+      "class": "consumer: heredoc body judged",
+      "before": "deny"
+    },
+    {
+      "id": "psql-heredoc-drop",
+      "command": "psql <<'E'\nDROP TABLE users;\nE",
+      "expect": "deny",
+      "class": "DB client is a consumer; snapshot guard",
+      "before": "deny"
+    },
+    {
+      "id": "echo-drop-piped-to-psql",
+      "command": "echo \"DROP TABLE users\" | psql",
+      "expect": "deny",
+      "class": "consumer: sink quote kept",
+      "before": "deny"
+    },
+    {
+      "id": "find-execdir-pattern",
+      "command": "find . -execdir ./provisionar-instancia.sh {} \\;",
+      "patterns": [
+        "provisionar-instancia.sh"
+      ],
+      "expect": "deny",
+      "class": "-execdir is not read-only",
+      "before": "deny"
+    },
+    {
+      "id": "env-pager-pattern",
+      "command": "env GIT_PAGER=./provisionar-instancia.sh git log",
+      "patterns": [
+        "provisionar-instancia.sh"
+      ],
+      "expect": "deny",
+      "class": "an env prefix is not read-only",
+      "before": "deny"
+    },
+    {
+      "id": "echo-to-script-then-run",
+      "command": "echo \"fly deploy\" > d.sh; ./d.sh",
+      "expect": "deny",
+      "class": "a sink with a redirect is a writer, not a recorder",
+      "before": "deny"
+    }
+  ]
+}

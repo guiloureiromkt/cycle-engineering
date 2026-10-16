@@ -8,11 +8,19 @@
 //
 //   node scripts/retro.mjs <intent>     writes .cycle/work/<intent>/retro.md and prints the numbers
 //   node scripts/retro.mjs <intent> --print   prints without writing
-//   node scripts/retro.mjs --repeats    findings that appear in two or more retros (R11)
+//   node scripts/retro.mjs --repeats                              findings that appear in two or more retros (R11), this repo only
+//   node scripts/retro.mjs --repeats --across [--since YYYY-MM-DD | --since-last-report]
+//                                        the same over this repo AND every `products` path of .cycle/config.json,
+//                                                                 with a header per repository; --since keeps retros whose last commit is on or after the date
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { createHash } from "node:crypto";
+import { homedir } from "node:os";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
+import { lastEvolveReport } from "../hooks/_lib.mjs";
 
 const MACHINE = "<!-- cycle:retro:machine -->";
 const PROSE = "<!-- cycle:retro:prose -->";
@@ -162,22 +170,116 @@ function render(m) {
 }
 
 // ─── findings across retros (R11) ───────────────────────────────────────────────
-function repeats(root) {
-  const base = join(root, ".cycle", "work");
-  if (!existsSync(base)) fail("no .cycle/work/ directory: no retro has been written in this repository.");
-  const seen = new Map();
-  for (const dir of readdirSync(base, { withFileTypes: true }).filter((d) => d.isDirectory())) {
-    const file = join(base, dir.name, "retro.md");
-    if (!existsSync(file)) continue;
-    const body = readFileSync(file, "utf8");
-    const lines = section(body, /findings/i) || [];
-    for (const l of lines.filter(isItem)) {
-      const text = l.replace(/^\s*(\d+\.|[-*])\s+/, "").trim();
-      const key = text.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
-      if (!key) continue;
-      if (!seen.has(key)) seen.set(key, { text, where: [] });
-      seen.get(key).where.push(dir.name);
+const tilde = (p) => p.replace(homedir(), "~");
+
+/** Absolute path of a products entry: `~` expands, a relative path resolves against the method repo. */
+function expandProduct(p, root) {
+  const s = String(p);
+  if (s.startsWith("~")) return join(homedir(), s.slice(1));
+  return s.startsWith("/") ? s : join(root, s);
+}
+
+/** Every retro.md under <repo>/.cycle/work/<cycle>/, sorted by cycle name. */
+function retrosOf(repo) {
+  const base = join(repo, ".cycle", "work");
+  if (!existsSync(base)) return [];
+  return readdirSync(base, { withFileTypes: true })
+    .filter((d) => d.isDirectory()).map((d) => d.name).sort()
+    .map((cycle) => ({ repo, cycle, file: join(base, cycle, "retro.md") }))
+    .filter((r) => existsSync(r.file));
+}
+
+/** The repos to read: the one we run in, plus `products` from its .cycle/config.json when --across. */
+function reposToRead(root, across) {
+  const repos = [root];
+  const missing = [];
+  if (!across) return { repos, missing };
+  let cfg = {};
+  try { cfg = JSON.parse(readFileSync(join(root, ".cycle", "config.json"), "utf8")); } catch { cfg = {}; }
+  for (const p of Array.isArray(cfg.products) ? cfg.products : []) {
+    const abs = expandProduct(p, root);
+    if (!existsSync(join(abs, ".cycle", "work"))) { missing.push(abs); continue; }
+    if (!repos.includes(abs)) repos.push(abs);
+  }
+  return { repos, missing };
+}
+
+/** YYYY-MM-DD (UTC) of the last commit touching `file` in `repo`; an uncommitted retro counts as today. */
+function lastCommitDate(repo, file) {
+  let at = "";
+  try { at = execFileSync("git", ["-C", repo, "log", "-1", "--format=%cI", "--", file], { encoding: "utf8" }).trim(); } catch { at = ""; }
+  return (at || new Date().toISOString()).slice(0, 10);
+}
+
+/** Worktrees of `repo` other than itself (`git worktree list --porcelain`); 0 when git says nothing. */
+function worktreesNotRead(repo) {
+  try {
+    const out = execFileSync("git", ["-C", repo, "worktree", "list", "--porcelain"], { encoding: "utf8" });
+    return Math.max((out.match(/^worktree /gm) || []).length - 1, 0);
+  } catch { return 0; }
+}
+
+/** Sibling directories of the listed repos that have a .cycle/work/ and are not listed (counted, never read). */
+function unlistedRepos(repos) {
+  const parents = [...new Set(repos.map((r) => join(r, "..")))];
+  const listed = new Set(repos.map((r) => r.replace(/\/+$/, "")));
+  const out = [];
+  for (const p of parents) {
+    let names = [];
+    try { names = readdirSync(p, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => join(p, d.name)); } catch { continue; }
+    for (const d of names) if (!listed.has(d) && existsSync(join(d, ".cycle", "work"))) out.push(d);
+  }
+  return out.sort();
+}
+
+function repeats(root, { across = false, since = null } = {}) {
+  if (!existsSync(join(root, ".cycle", "work")) && !across) fail("no .cycle/work/ directory: no retro has been written in this repository.");
+  const { repos, missing } = reposToRead(root, across);
+  const seenCopy = new Map();   // `${cycle}#${hash}` → first label
+  const collapsed = [];
+  const seen = new Map();       // normalised finding → { text, where: [] }
+  const list = [];
+  const header = [];
+  for (const repo of repos) {
+    const label = tilde(repo);
+    let read = 0, kept = 0;
+    for (const r of retrosOf(repo)) {
+      const body = readFileSync(r.file, "utf8");
+      read++;
+      if (since && lastCommitDate(repo, r.file) < since) continue;
+      const key2 = `${r.cycle}#${createHash("sha256").update(body).digest("hex")}`;
+      if (seenCopy.has(key2)) { collapsed.push({ dup: `${label}/${r.cycle}`, first: seenCopy.get(key2) }); continue; }
+      seenCopy.set(key2, `${label}/${r.cycle}`);
+      kept++;
+      const lines = section(body, /findings/i) || [];
+      for (const l of lines.filter(isItem)) {
+        const text = l.replace(/^\s*(\d+\.|[-*])\s+/, "").trim();
+        const key = text.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+        if (!key) continue;
+        list.push({ label, cycle: r.cycle, text, key });
+        if (!seen.has(key)) seen.set(key, { text, where: [] });
+        seen.get(key).where.push(across ? `${label}/${r.cycle}` : r.cycle);   // --repeats alone prints cycles only, as before
+      }
     }
+    const findings = list.filter((f) => f.label === label).length;
+    header.push({ label, read, kept, findings, worktrees: worktreesNotRead(repo) });
+  }
+  if (across) {
+    console.log(`retros read${since ? ` since ${since}` : ""}:`);
+    for (const h of header) console.log(`  ${h.label}: ${h.read} retro${h.read === 1 ? "" : "s"}${since ? `, ${h.kept} since ${since}` : ""}, ${h.findings} finding${h.findings === 1 ? "" : "s"}${h.worktrees ? `, worktrees not read: ${h.worktrees}` : ""}`);
+    for (const m of missing) console.log(`  not found: ${tilde(m)} (no .cycle/work/ there; check products in .cycle/config.json)`);
+    const unlisted = unlistedRepos(repos);
+    if (unlisted.length) console.log(`  repos with .cycle/work not in products: ${unlisted.length} (${unlisted.map(tilde).join(", ")})`);
+    if (collapsed.length) {
+      console.log(`  collapsed ${collapsed.length} duplicate retro${collapsed.length > 1 ? "s" : ""} (same cycle and content, read once):`);
+      for (const c of collapsed) console.log(`    ${c.dup} = ${c.first}`);
+    }
+    console.log("");
+    for (const f of list) {
+      const times = new Set(seen.get(f.key).where).size;
+      console.log(`${f.label} · ${f.cycle} · ${f.text.replace(/^\*\*(.+?)\*\*/, "$1")}${times >= 2 ? `   [repeats ×${times}]` : ""}`);
+    }
+    console.log("");
   }
   const twice = [...seen.values()].filter((f) => new Set(f.where).size >= 2);
   if (!twice.length) { console.log("no finding appears in two or more retros yet."); return; }
@@ -188,7 +290,17 @@ function repeats(root) {
 // ─── main ───────────────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
 const root = git("rev-parse", "--show-toplevel") || process.cwd();
-if (args.includes("--repeats")) { repeats(root); process.exit(0); }
+if (args.includes("--repeats")) {
+  const i = args.indexOf("--since");
+  let since = i !== -1 ? args[i + 1] || null : null;
+  if (since && !/^\d{4}-\d{2}-\d{2}$/.test(since)) fail(`--since expects YYYY-MM-DD, got "${since}"`);
+  if (args.includes("--since-last-report")) {
+    const last = lastEvolveReport(root);
+    since = last ? last.date : new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  }
+  repeats(root, { across: args.includes("--across"), since });
+  process.exit(0);
+}
 
 const name = args.find((a) => !a.startsWith("--"));
 if (!name) fail("usage: retro.mjs <intent> [--print] | --repeats");

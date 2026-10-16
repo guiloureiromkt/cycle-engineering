@@ -1,8 +1,10 @@
 // cycle-engineering · snapshot guard (PreToolUse on Bash, dispatched by pre-bash.mjs).
 // A destructive command needs a snapshot recorded in .cycle/work/<intent>/snapshot.md less than 60 minutes old.
+// Since 2026-10-16 the rules run per executable segment (hooks/_lib.mjs commandView + walk): a destructive
+// phrase that lives only in a comment, a quoted-tag heredoc body or a sink quote is grey → ask.
 import { join } from "node:path";
 import { existsSync, readdirSync, statSync } from "node:fs";
-import { gateRepo, isMain, main } from "./_lib.mjs";
+import { gateRepo, root, isMain, main, viewFor, walk, gateLog } from "./_lib.mjs";
 
 const SNAPSHOT_TTL_MS = 60 * 60 * 1000;
 const RM_EXEMPT = /(^|\/)(node_modules|dist|build|\.next|coverage|\.cache|\.turbo)\/?$/;
@@ -53,17 +55,44 @@ function freshSnapshotExists(repo) {
   } catch { return false; }
 }
 
+const cut = (raw) => (raw.length > 300 ? raw.slice(0, 300) + " […]" : raw);
+
+function refusal(raw, repo, hit, where) {
+  return `cycle · SNAPSHOT GUARD: this command is destructive (matched: ${hit}${where}) and no snapshot newer than 60 minutes exists.
+Command: ${cut(raw)}
+Before running it, take a snapshot (git stash -u, a branch, a DB dump) and record it in ${join(repo, ".cycle/work")}/<intent>/snapshot.md with what was saved and how to restore (the file's modification time is the clock). Then run the command again.`;
+}
+
 export function run(input) {
   const raw = String(input?.tool_input?.command || "");
-  const cmd = raw.toLowerCase();
-  const repo = gateRepo(input);
-  if (!cmd || !repo) return { block: null };
-  const hit = destructiveMatch(cmd, repo);
-  if (!hit) return { block: null };
-  if (freshSnapshotExists(repo)) return { block: null };
-  return { block: `cycle · SNAPSHOT GUARD: this command is destructive (matched: ${hit}) and no snapshot newer than 60 minutes exists.
-Command: ${raw}
-Before running it, take a snapshot (git stash -u, a branch, a DB dump) and record it in ${join(repo, ".cycle/work")}/<intent>/snapshot.md with what was saved and how to restore (the file's modification time is the clock). Then run the command again.` };
+  const sessionRepo = gateRepo(input);
+  if (!raw || !sessionRepo) return { block: null };
+  const sessionCwd = typeof input?.cwd === "string" && existsSync(input.cwd) ? input.cwd : root();
+  const legacy = process.env.CYCLE_GATE_LEGACY === "1";
+  const view = legacy ? null : viewFor(raw);
+  if (legacy || !view || view.fallback || !view.segments.length) {
+    const hit = destructiveMatch(raw.toLowerCase(), sessionRepo);
+    if (!hit) return { block: null };
+    if (freshSnapshotExists(sessionRepo)) return { block: null };
+    gateLog(sessionRepo, "deny", hit, legacy ? "legacy" : "fallback");
+    return { block: refusal(raw, sessionRepo, hit, legacy ? " (CYCLE_GATE_LEGACY=1: parsed as a whole)" : " (parsed as a whole: parser fallback)") };
+  }
+  const segs = walk(view, { cwd: sessionCwd });
+  let hitSeen = false;                                                        // every hit needs ITS repo's snapshot (C-2)
+  for (const [k, seg] of segs.entries()) {
+    const repo = seg.repo ?? sessionRepo;
+    const hit = destructiveMatch(seg.text.toLowerCase(), repo);
+    if (!hit) continue;
+    hitSeen = true;
+    if (freshSnapshotExists(repo)) continue;
+    gateLog(repo, "deny", hit, "segment");
+    return { block: refusal(raw, repo, hit, ` in segment ${k + 1}: \`${seg.text.trim().slice(0, 120)}\``) };
+  }
+  if (hitSeen) return { block: null };                                        // every hit had a fresh snapshot
+  const h = destructiveMatch(view.removed.map(r => r.text).join("\n").toLowerCase(), sessionRepo);
+  if (!h) return { block: null };
+  gateLog(sessionRepo, "ask", h, "removed");
+  return { ask: `the words that match ${h} are only inside text being written or recorded (${[...new Set(view.removed.map(r => r.kind))].join(", ")}); nothing destructive runs. Allow if that is right.\nCommand: ${cut(raw)}` };
 }
 
 if (isMain(import.meta.url)) main(run);

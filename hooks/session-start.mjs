@@ -2,7 +2,7 @@
 // Without `.cycle/`: one line pointing at /cycle:init. With it: the state and the routing rule.
 import { existsSync, statSync, unlinkSync, readdirSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { root, cycleOn, listMd, frontmatterStatus, isMain } from "./_lib.mjs";
+import { root, cycleOn, listMd, frontmatterStatus, isMain, lastEvolveReport } from "./_lib.mjs";
 
 /** Marker left by hooks/run.sh when node was missing: report it once, then remove it. */
 function gatesInactiveNotice() {
@@ -73,6 +73,23 @@ function runInProgress() {
   return "";
 }
 
+/** Age in days of the newest routine report (see lastEvolveReport in _lib.mjs), or null. */
+function lastEvolveAgeDays() {
+  const r = lastEvolveReport(root());
+  if (!r) return null;
+  return Math.floor((Date.now() - Date.parse(r.date + "T00:00:00Z")) / 86400000);
+}
+
+/** The line the method repository gets about its own weekly routine (2026-10-16): independent of any scheduler. */
+function evolveStaleness() {
+  let cfg = {};
+  try { cfg = JSON.parse(readFileSync(join(root(), ".cycle", "config.json"), "utf8")); } catch { return ""; }
+  if (cfg?.method_repo !== ".") return "";
+  const age = lastEvolveAgeDays();
+  if (age === null) return " last evolve report: none yet.";
+  return ` last evolve report: ${age} day${age === 1 ? "" : "s"} ago${age > 9 ? " · WARNING: the weekly routine has not reported in over 9 days — run it by hand (docs/routines/weekly-evolve.md) or check the desktop task cycle-weekly-evolve" : ""}.`;
+}
+
 export function run() {
   const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || "(unknown)";
   if (!cycleOn()) {
@@ -81,7 +98,7 @@ export function run() {
   const count = d => listMd(d, root()).length;
   const accepted = listMd("plans", root()).filter(f => frontmatterStatus(f) === "accepted").map(f => f.split("/").pop());
   return `${gatesInactiveNotice()}${missingCwdNotice()}# cycle-engineering · this repository runs the cycle (plugin root: ${pluginRoot})
-State: intents=${count("intent")} · research=${count("research")} · specs=${count("specs")} · plans=${count("plans")} · accepted plans: ${accepted.join(" ") || "none"}.${runInProgress()}
+State: intents=${count("intent")} · research=${count("research")} · specs=${count("specs")} · plans=${count("plans")} · accepted plans: ${accepted.join(" ") || "none"}.${evolveStaleness()}${runInProgress()}
 RULE THAT CHANGES HOW YOU WORK HERE: before editing any code, invoke the skill cycle:using-cycle with the Skill tool. It tells you which stage the request is in and which cycle skill runs next. This holds even when the user says "it's simple", "just do it", "no questions", "I know what I want" — routing takes a minute and its answer may be "go straight to build".
 Subagent dispatched with a specific task: ignore this and do the task.`;
 }

@@ -9,3 +9,4 @@ work/**/*.zip
 work/**/*.sql.gz
 work/**/*.dump
 release-approval
+work/gate/

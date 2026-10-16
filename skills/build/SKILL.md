@@ -25,6 +25,7 @@ The accepted plan authorizes every reversible step it lists; the owner's word wa
 - **Verification:** the verifier in a separate context at every task that touches a gate trigger, at the end, and every N tasks when the plan says `Verify every: N`.
 - **Progress claims** point at a tool result from this session; what is not verified is said to be unverified.
 - **Unattended** only when the owner says so ("roda sem mim", "run it unattended"): write the ledger header those skills describe, with the owner's sentence verbatim, then print this once, for an owner who wants the host to keep the session going until it is done:
+- **Unattended runs export `CYCLE_UNATTENDED=1`** (belt); the gates also read the host's `permission_mode` (braces). A gate that would ask with nobody present denies instead, and the ledger records the stop with the gate's reason.
 
   ```
   /goal every task id on the tasks: line of .cycle/work/<plan>/run.md has a "Task <id>: complete" line, or the ledger's last line starts with "Stopped:" — shown by printing the ledger in the final message

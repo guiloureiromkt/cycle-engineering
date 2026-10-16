@@ -20,6 +20,8 @@ The loop closes. The trigger invokes the agent, it diagnoses, acts only through 
 3. **Code.** Review of what changed since the last one (built-in code review when available; the three passes of `cycle:deploy` otherwise).
 4. **Backup.** Does it exist, does it run, and did it **restore** in a recent test? An untested backup is a hypothesis.
 
+**The gate's own log.** Read `.cycle/work/gate.log` at each review: more than ~5 asks a week in one repository, or a rising share of `fallback` lines, reopens the gate's tokenizer (`intent/2026-10-16-the-gate-judges-commands-not-prose`, "real parser vs hand tokenizer"). Count asks **plus** denies: denies fall by construction when they become asks.
+
 ## Steps
 1. Run stateless: read the trigger and the repo, no memory of the previous session.
 2. Diagnose with read-only tools first.

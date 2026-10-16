@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { tmpdir, homedir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -29,7 +29,7 @@ const commit = (cwd, msg, minutesFromEpochBase) => {
   if (r.status !== 0) throw new Error(r.stderr);
   return git(cwd, "rev-parse", "--short", "HEAD");
 };
-const run = (cwd, args = []) => spawnSync(process.execPath, [retro, ...args], { cwd, encoding: "utf8", env: { ...process.env, ...gitEnv } });
+const run = (cwd, args = [], env = {}) => spawnSync(process.execPath, [retro, ...args], { cwd, encoding: "utf8", env: { ...process.env, ...gitEnv, ...env } });
 
 const N = "2026-09-12-a-closed-cycle";
 
@@ -192,4 +192,118 @@ test("retro: a stage dated differently from the plan is still found (the date is
   const r = run(d, [N]);
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.doesNotMatch(r.stdout, /no intent artifact/);
+});
+
+// ─── --across (2026-10-16 · the evolve routine reads the products) ───────────────
+/** A method repo with one retro and a product repo with one retro, both under a fake HOME so `~` labels are testable. */
+function methodAndProduct() {
+  const home = mkdtempSync(join(tmpdir(), "cycle-home-")); dirs.push(home);
+  const method = join(home, "Repos", "method"); const product = join(home, "Repos", "product");
+  for (const d of [method, product]) { mkdirSync(d, { recursive: true }); git(d, "init", "-q", "-b", "main"); write(d, "README.md", "# t\n"); commit(d, "init", 0); }
+  write(method, ".cycle/config.json", JSON.stringify({ method_repo: ".", products: ["~/Repos/product", "~/Repos/missing"] }));
+  write(method, ".cycle/work/2026-10-01-alpha/retro.md", "# Retro · alpha\n\n## Findings\n- **The gate read prose.** Three false blocks.\n");
+  commit(method, "retro alpha", 10);
+  write(product, ".cycle/work/2026-10-02-beta/retro.md", "# Retro · beta\n\n## Findings\n- **Comment is not proof.** The code said one thing.\n- **The gate read prose.** Three false blocks.\n");
+  commit(product, "retro beta", 20);
+  return { home, method, product, env: { HOME: home } };
+}
+
+test("--across: findings from the method repo and every products path; a missing path is reported, not fatal", () => {
+  const { method, env } = methodAndProduct();
+  const r = run(method, ["--repeats", "--across"], env);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /~\/Repos\/method · 2026-10-01-alpha · The gate read prose\./);
+  assert.match(r.stdout, /~\/Repos\/product · 2026-10-02-beta · Comment is not proof\./);
+  assert.match(r.stdout, /not found: ~\/Repos\/missing/);
+});
+
+test("--repeats without --across keeps the single-repo behaviour and never reads products", () => {
+  const { method, env } = methodAndProduct();
+  const r = run(method, ["--repeats"], env);
+  assert.equal(r.status, 0, r.stderr);
+  assert.doesNotMatch(r.stdout, /Comment is not proof\./, "a product finding leaked into the single-repo run");
+  assert.doesNotMatch(r.stdout, / · 2026-10-01-alpha · /, "the per-finding list must not print without --across");
+  assert.match(r.stdout, /no finding appears in two or more retros yet\./);
+});
+
+test("--across: a worktree copy (same cycle name and content) is read once and the collapse is printed", () => {
+  const { home, method, product, env } = methodAndProduct();
+  const copy = join(home, "Repos", "product-wt"); mkdirSync(copy, { recursive: true });
+  git(copy, "init", "-q", "-b", "main"); write(copy, "README.md", "# t\n"); commit(copy, "init", 0);
+  write(copy, ".cycle/work/2026-10-02-beta/retro.md", readFileSync(join(product, ".cycle/work/2026-10-02-beta/retro.md"), "utf8"));
+  commit(copy, "copy", 30);
+  write(method, ".cycle/config.json", JSON.stringify({ method_repo: ".", products: ["~/Repos/product", "~/Repos/product-wt"] }));
+  const r = run(method, ["--repeats", "--across"], env);
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal((r.stdout.match(/Comment is not proof\./g) || []).length, 1, "the duplicated retro must be listed once");
+  assert.match(r.stdout, /collapsed 1 duplicate retro/);
+  assert.match(r.stdout, /~\/Repos\/product-wt\/2026-10-02-beta = ~\/Repos\/product\/2026-10-02-beta/);
+  assert.match(r.stdout, /The gate read prose\..*\[repeats ×2\]/);
+});
+
+test("--across: two different cycles with identical findings are both read and the repeat is reported", () => {
+  const { method, product, env } = methodAndProduct();
+  write(product, ".cycle/work/2026-10-03-gamma/retro.md", readFileSync(join(product, ".cycle/work/2026-10-02-beta/retro.md"), "utf8"));
+  commit(product, "gamma", 40);
+  const r = run(method, ["--repeats", "--across"], env);
+  assert.doesNotMatch(r.stdout, /collapsed/);
+  assert.match(r.stdout, /Comment is not proof\..*\[repeats ×2\]/);
+});
+
+test("--since: a retro committed before the date is read but not listed; the header says read and kept per repo", () => {
+  const { method, env } = methodAndProduct();   // alpha committed at +10 min, beta at +20 min from 2026-09-12 12:00 UTC
+  const r = run(method, ["--repeats", "--across", "--since", "2026-09-13"], env);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /retros read since 2026-09-13:/);
+  assert.match(r.stdout, /~\/Repos\/method: 1 retro, 0 since 2026-09-13/);
+  assert.doesNotMatch(r.stdout, / · 2026-10-01-alpha · /);
+  const r2 = run(method, ["--repeats", "--across", "--since", "2026-09-12"], env);
+  assert.match(r2.stdout, /~\/Repos\/method: 1 retro, 1 since 2026-09-12/);
+  assert.match(r2.stdout, / · 2026-10-01-alpha · /);
+});
+
+test("--repeats in a repo with no .cycle/work still fails loudly (exit 1)", () => {
+  const bare = mkdtempSync(join(tmpdir(), "cycle-bare-")); dirs.push(bare);
+  git(bare, "init", "-q", "-b", "main"); write(bare, "README.md", "# t\n"); commit(bare, "init", 0);
+  const r = run(bare, ["--repeats"]);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /no \.cycle\/work\/ directory/);
+});
+
+test("--across: cycles are listed in name order within a repo, repos in config order after the method repo", () => {
+  const { method, product, env } = methodAndProduct();
+  write(product, ".cycle/work/2026-09-30-aardvark/retro.md", "# Retro · aardvark\n\n## Findings\n- **Z first by name.** x\n");
+  commit(product, "aardvark", 50);
+  const r = run(method, ["--repeats", "--across"], env);
+  const order = r.stdout.split("\n").filter((l) => / · \d{4}-\d{2}-\d{2}-/.test(l)).map((l) => l.split(" · ")[1]);
+  assert.deepEqual(order, ["2026-10-01-alpha", "2026-09-30-aardvark", "2026-10-02-beta", "2026-10-02-beta"]);
+});
+
+// ─── fix pass after the final review (2026-10-16) ───────────────────────────────
+test("--repeats alone: the `seen in:` line names cycles only, as before --across existed", () => {
+  const { method, env } = methodAndProduct();
+  write(method, ".cycle/work/2026-10-05-delta/retro.md", "# Retro · delta\n\n## Findings\n- **The gate read prose.** Three false blocks.\n");
+  commit(method, "delta", 60);
+  const r = run(method, ["--repeats"], env);
+  assert.match(r.stdout, /seen in: 2026-10-01-alpha, 2026-10-05-delta$/m);
+  assert.doesNotMatch(r.stdout, /Repos\/method\/2026-10-01-alpha/);
+});
+
+test("--since-last-report: the cutoff is the newest routine report (routine: weekly-evolve), never a stub, a suffixed file or an owner-triggered report", () => {
+  const { method, env } = methodAndProduct();
+  mkdirSync(join(method, ".cycle", "work", "evolve"), { recursive: true });
+  write(method, ".cycle/work/evolve/2026-09-20.md", "---\nroutine: weekly-evolve\n---\n# weekly\n");
+  write(method, ".cycle/work/evolve/2026-10-10.md", "---\nstatus: did not complete\nroutine: weekly-evolve\n---\n");
+  write(method, ".cycle/work/evolve/2026-10-12.md", "# owner-triggered evolve, no routine key\n");
+  write(method, ".cycle/work/evolve/2026-10-14-sources.md", "---\nroutine: weekly-evolve\n---\n");
+  const r = run(method, ["--repeats", "--across", "--since-last-report"], env);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /retros read since 2026-09-20:/);
+});
+
+test("--since-last-report with no routine report yet uses seven days ago", () => {
+  const { method, env } = methodAndProduct();
+  const r = run(method, ["--repeats", "--across", "--since-last-report"], env);
+  const week = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  assert.match(r.stdout, new RegExp(`retros read since ${week}:`));
 });

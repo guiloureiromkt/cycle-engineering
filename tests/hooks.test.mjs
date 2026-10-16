@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { commandDir, repoFor, gateRepo } from "../hooks/_lib.mjs";
+import { commandDir, repoFor, gateRepo, commandView, walk, viewFor } from "../hooks/_lib.mjs";
 
 const HOOKS = join(dirname(fileURLToPath(import.meta.url)), "..", "hooks");
 const hook = (name) => join(HOOKS, name);
@@ -457,4 +457,213 @@ test("session-start: an unattended ledger without a tasks: line says the tasks a
   assert.match(ctx, /run in progress/i);
   assert.match(ctx, /no tasks: line/i);
   assert.doesNotMatch(ctx, /all complete/i);
+});
+
+test("session-start in the method repo prints the age of the last evolve report and warns past 9 days; stubs and suffixed files do not count", () => {
+  const dir = repo();
+  writeFileSync(join(dir, ".cycle", "config.json"), JSON.stringify({ method_repo: "." }));
+  mkdirSync(join(dir, ".cycle", "work", "evolve"), { recursive: true });
+  const old = new Date(Date.now() - 12 * 86400000).toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  writeFileSync(join(dir, ".cycle", "work", "evolve", `${old}.md`), "---\nroutine: weekly-evolve\n---\n# Evolve\n");
+  writeFileSync(join(dir, ".cycle", "work", "evolve", `${today}-sources.md`), "# sources\n");
+  writeFileSync(join(dir, ".cycle", "work", "evolve", `${today}.md`), "---\nstatus: did not complete\n---\n");
+  const r = spawnSync(process.execPath, [hook("session-start.mjs")], { cwd: dir, encoding: "utf8", input: "{}", env: { ...process.env, ...gitEnv, CLAUDE_PROJECT_DIR: dir } });
+  assert.match(r.stdout, /last evolve report: 12 days ago · WARNING: the weekly routine has not reported in over 9 days/);
+});
+
+// ─── commandView / walk (2026-10-16 · the gate judges commands, not prose) ────────
+test("commandView: removes only what is inert — comments, quoted-tag heredoc bodies, and quoted args of sink programs with no expansion", () => {
+  const raw = [
+    `cat > note.md <<'E'`, `deploy to production tomorrow`, `E`,
+    `git commit -m "deploy to production notes" # not a push`,
+    `gh pr create --body "does not touch .cycle/release-approval"`,
+    `grep -rn "systemctl restart" docs/`,
+    `ssh root@1.2.3.4 "cd /opt/command && tar -x" < /tmp/d.tar`,
+    `bash -c "./deploy.sh --prod"`,
+    `echo "$(fly deploy)"`,
+    `psql -c "DROP TABLE x"`,
+    `CMD="fly deploy"; $CMD`,
+  ].join("\n");
+  const v = commandView(raw);
+  const text = v.segments.map((s) => s.text).join("\n");
+  assert.doesNotMatch(text, /deploy to production/);
+  assert.doesNotMatch(text, /release-approval/);
+  assert.doesNotMatch(text, /systemctl restart/);
+  assert.doesNotMatch(text, /not a push/);
+  assert.match(text, /cd \/opt\/command && tar -x/, "quoted shell for ssh is NOT prose");
+  assert.match(text, /\.\/deploy\.sh --prod/);
+  assert.match(text, /echo "\$\(fly deploy\)"/, "a sink argument with $() is not inert");
+  assert.match(text, /DROP TABLE x/, "psql is not a sink");
+  assert.match(text, /CMD="fly deploy"/, "an assignment is not a sink");
+  assert.deepEqual(v.removed.map((r) => r.kind).sort(), ["comment", "heredoc", "quoted", "quoted", "quoted"]);
+});
+
+test("commandView: an unquoted-tag heredoc body stays executable text (it expands), and is judged", () => {
+  const v = commandView(`bash <<E\nfly deploy\nE`);
+  assert.match(v.segments.map((s) => s.text).join("\n"), /fly deploy/);
+  assert.equal(v.removed.length, 0);
+});
+
+test("commandView: splits on && || ; | and newline; $() and backticks stay; # inside $() or a backtick is not a comment; <<< is data; continuation joins", () => {
+  const v = commandView("cd a && git log; echo $(rm -rf x # y) | tee out || true\ncat <<< \"a b\" \\\n  --flag\necho `true # `; fly deploy");
+  assert.deepEqual(v.segments.map((s) => s.text.trim()), ["cd a", "git log", "echo $(rm -rf x # y)", "tee out", "true", 'cat <<< "…" --flag', "echo `true # `", "fly deploy"]);   // cat is a sink: the here-string text is inert
+  assert.equal(v.fallback, false);
+});
+
+test("commandView: an unterminated heredoc or quote sets fallback", () => {
+  assert.equal(commandView(`echo hi <<'E'\nnever closed`).fallback, true);
+  assert.equal(commandView(`echo "never closed`).fallback, true);
+});
+
+test("commandView: keepQuotes keeps sink quotes but still removes comments and quoted-tag heredocs", () => {
+  const v = commandView(`printf '%s' "fly deploy" | sh # x\ncat <<'E'\nprose\nE`, { keepQuotes: true });
+  const text = v.segments.map((s) => s.text).join("\n");
+  assert.match(text, /fly deploy/);
+  assert.doesNotMatch(text, /prose/);
+  assert.deepEqual(v.removed.map((r) => r.kind).sort(), ["comment", "heredoc"]);
+});
+
+test("walk: cwd follows cd (quoted too) and nested shells; branch is seeded per repo, carried only across &&, and `checkout <x>` counts only when refs/heads/x exists", () => {
+  const a = repo({ branch: "main" }); const b = repo({ branch: "master" });
+  mkdirSync(join(a, "s d"), { recursive: true });
+  git(a, "branch", "feat");
+  const v = commandView(`git checkout feat && git push origin HEAD && cd "s d" && git checkout README.md && git push; git push origin HEAD || git push && cd ${b} && git push`);
+  const w = walk(v, { cwd: a });
+  assert.equal(w[0].branch, "main"); assert.equal(w[0].branchAfter, "feat");
+  assert.equal(w[1].branch, "feat");
+  assert.equal(w[2].cwd, join(a, "s d"));
+  assert.equal(w[3].branchAfter, "feat", "README.md is not a branch");
+  assert.equal(w[4].branch, "feat");
+  assert.equal(w[5].branch, null, "after ; the branch is unknown"); assert.equal(w[5].seed, "main");
+  assert.equal(w[6].branch, null, "after || the branch is unknown");
+  assert.equal(w[8].branch, "master", "a new repo seeds its own branch"); assert.equal(w[8].seed, "master");
+});
+
+test("session-start: an owner-triggered evolve report without routine: weekly-evolve does not count as the last routine report", () => {
+  const dir = repo();
+  writeFileSync(join(dir, ".cycle", "config.json"), JSON.stringify({ method_repo: "." }));
+  mkdirSync(join(dir, ".cycle", "work", "evolve"), { recursive: true });
+  const old = new Date(Date.now() - 15 * 86400000).toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  writeFileSync(join(dir, ".cycle", "work", "evolve", `${old}.md`), "---\nroutine: weekly-evolve\n---\n# weekly\n");
+  writeFileSync(join(dir, ".cycle", "work", "evolve", `${today}.md`), "# owner-triggered review\n");
+  const r = spawnSync(process.execPath, [hook("session-start.mjs")], { cwd: dir, encoding: "utf8", input: "{}", env: { ...process.env, ...gitEnv, CLAUDE_PROJECT_DIR: dir } });
+  assert.match(r.stdout, /last evolve report: 15 days ago · WARNING/);
+});
+
+// ─── gate-prose fixtures (2026-10-16): before recorded by replay, expect = after the change ───────
+import { readFileSync } from "node:fs";
+import { outcome as replay, prepare as prepareCase } from "./fixtures/gate-prose/record-before.mjs";
+const GATE_PROSE = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "fixtures", "gate-prose", "cases.json"), "utf8"));
+
+test("gate-prose: before values were recorded by the replay script at a known commit", () => {
+  assert.ok(GATE_PROSE.recorded_on, "run node tests/fixtures/gate-prose/record-before.mjs first");
+  for (const c of GATE_PROSE.cases) assert.ok(["allow", "ask", "deny"].includes(c.before), `${c.id} has no recorded before`);
+});
+
+for (const c of GATE_PROSE.cases) {
+  test(`gate-prose ${c.id}: ${c.before} → ${c.expect}`, () => {
+    const { dir, command } = prepareCase({ ...c });
+    const got = replay(dir, command);
+    assert.equal(got, c.expect, `${c.id} (${c.class})`);
+  });
+}
+
+test("never looser: a case that denied before may only stop denying with a declared loosening", () => {
+  const undeclared = GATE_PROSE.cases.filter((c) => c.before === "deny" && c.expect !== "deny" && !c.loosening);
+  assert.deepEqual(undeclared.map((c) => c.id), [], "a deny became something else without a declared reason");
+  const toAllow = GATE_PROSE.cases.filter((c) => c.before === "deny" && c.expect === "allow");
+  assert.ok(toAllow.length <= 5, "more deny→allow cases than the plan declared");
+});
+
+// ─── pre-bash outcomes (2026-10-16 · Task 6) ─────────────────────────────────────
+function preBashRaw(dir, command, payloadExtra = {}, env = {}) {
+  const payload = { cwd: dir, permission_mode: "default", tool_input: { command }, ...payloadExtra };
+  if (payloadExtra.permission_mode === undefined && "permission_mode" in payloadExtra) delete payload.permission_mode;
+  return spawnSync(process.execPath, [hook("pre-bash.mjs")], { cwd: dir, encoding: "utf8", input: JSON.stringify(payload), env: { ...process.env, ...gitEnv, CLAUDE_PROJECT_DIR: dir, ...env } });
+}
+const GREY = `cat > n.md <<'E'\ndeploy to production\nE`;
+
+test("pre-bash: an ask is the host's PreToolUse JSON on stdout with exit 0, in plain words, with the command cut", () => {
+  const dir = repo();
+  const r = preBashRaw(dir, GREY);
+  assert.equal(r.status, 0, r.stderr);
+  const j = JSON.parse(r.stdout.trim());
+  assert.equal(j.hookSpecificOutput.hookEventName, "PreToolUse");
+  assert.equal(j.hookSpecificOutput.permissionDecision, "ask");
+  assert.match(j.hookSpecificOutput.permissionDecisionReason, /only inside text being written or recorded/);
+  assert.match(j.hookSpecificOutput.permissionDecisionReason, /nothing in the command deploys/);
+});
+
+test("pre-bash: nobody present → the same grey case denies — permission_mode bypassPermissions, dontAsk, absent, non-string, or CYCLE_UNATTENDED=1; interactive modes ask", () => {
+  const dir = repo();
+  for (const [extra, env] of [[{ permission_mode: "bypassPermissions" }, {}], [{ permission_mode: undefined }, {}], [{ permission_mode: 7 }, {}], [{}, { CYCLE_UNATTENDED: "1" }]]) {
+    const r = preBashRaw(dir, GREY, extra, env);
+    assert.equal(r.status, 2, `expected deny for ${JSON.stringify(extra)} ${JSON.stringify(env)}`);
+    assert.match(r.stderr, /nobody present/);
+    assert.match(r.stderr, /only inside text being written/);
+  }
+  for (const mode of ["plan", "acceptEdits", "auto"]) assert.equal(preBashRaw(dir, GREY, { permission_mode: mode }).status, 0, `${mode} mode has a human`);
+  assert.equal(preBashRaw(dir, GREY, { permission_mode: "dontAsk" }).status, 2, "dontAsk has nobody");
+});
+
+test("pre-bash: CYCLE_GATE_LEGACY=1 restores whole-string judgement — the grey case denies and says so", () => {
+  const dir = repo();
+  const r = preBashRaw(dir, GREY, {}, { CYCLE_GATE_LEGACY: "1" });
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /CYCLE_GATE_LEGACY=1: parsed as a whole/);
+});
+
+test("gate/gate.log: one line per ask/deny with decision, kind and rule — never the command text, never a URL's user:token", () => {
+  const dir = repo();
+  preBashRaw(dir, GREY);
+  preBashRaw(dir, "git push https://u:tok@example.com/x.git main");
+  preBashRaw(dir, "git status");
+  const log = readFileSync(join(dir, ".cycle", "work", "gate", "gate.log"), "utf8").trim().split("\n");
+  assert.equal(readFileSync(join(dir, ".cycle", "work", "gate", ".gitignore"), "utf8").trim(), "*", "the log folder ignores itself");
+  assert.equal(log.length, 2, log.join("\n"));
+  assert.match(log[0], /^\d{4}-\d{2}-\d{2}T\S+ ask removed /);
+  assert.match(log[1], /^\d{4}-\d{2}-\d{2}T\S+ deny segment push to protected branch main/);
+  assert.doesNotMatch(log.join("\n"), /tok|cat > n\.md|example\.com/);
+});
+
+test("pre-bash: a 4 KB command with heredocs is judged in under 1 s without a backend", () => {
+  const dir = repo();
+  const big = `cat > a.md <<'E'\n${"line of prose about nothing\n".repeat(160)}E\ngit status && ls`;
+  assert.ok(big.length > 4000);
+  const t0 = performance.now(); const r = preBashRaw(dir, big); const ms = performance.now() - t0;
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(ms < 1000, `took ${ms.toFixed(0)} ms`);
+});
+
+// ─── fix pass after the final review (2026-10-16) ───────────────────────────────
+test("pre-bash: a closed stdout on the ask path exits 2 (EPIPE is a deny, never an empty allow)", () => {
+  const dir = repo();
+  const payload = JSON.stringify({ cwd: dir, permission_mode: "default", tool_input: { command: GREY } });
+  const r = spawnSync("bash", ["-o", "pipefail", "-c", `node "${hook("pre-bash.mjs")}" | head -c 0`], { cwd: dir, encoding: "utf8", input: payload, env: { ...process.env, ...gitEnv, CLAUDE_PROJECT_DIR: dir } });
+  assert.equal(r.status, 2, `status ${r.status}; stderr: ${r.stderr}`);
+});
+
+test("never looser: a deny that became an ask belongs to a prose, sink-quote or quoted-tag class", () => {
+  const asks = GATE_PROSE.cases.filter((c) => c.before === "deny" && c.expect === "ask");
+  for (const c of asks) assert.match(c.class, /prose|sink quote|quoted tag/, `${c.id}: ${c.class}`);
+});
+
+test("commandView: a line continuation inside a quoted-tag heredoc body is literal; $'…' sets the fallback; a sink with a redirect keeps its quote", () => {
+  const v = commandView(`cat > n.md <<'E'\nnote \\\nE\ngit push origin main\nE`);
+  assert.ok(v.segments.some((s) => /git push origin main/.test(s.text)), "the push after the terminator is a segment");
+  assert.equal(commandView(`echo $'a\\' # '; git push origin main`).fallback, true);
+  const w = commandView(`echo "fly deploy" > d.sh; ./d.sh`);
+  assert.match(w.segments[0].text, /fly deploy/);
+  assert.equal(w.removed.length, 0);
+});
+
+test("viewFor: a consumer anywhere keeps quoted-tag heredoc bodies and sink quotes executable", () => {
+  const v = viewFor(`ssh root@vps <<'E'\ncd /opt/command && tar -x\nE`);
+  assert.ok(v.segments.some((s) => /tar -x/.test(s.text)));
+  const w = viewFor(`echo "DROP TABLE users" | psql`);
+  assert.ok(w.segments.some((s) => /DROP TABLE users/.test(s.text)));
+  const plain = viewFor(`cat > n.md <<'E'\nprose\nE`);
+  assert.equal(plain.removed.length, 1, "no consumer: the body stays removed");
 });
