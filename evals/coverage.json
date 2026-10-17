@@ -20,6 +20,9 @@
     "uncovered": "the init warning (R5) has no eval case: /cycle:init needs the session hook's plugin root, which the sandbox does not provide; a manual smoke test is recorded in evals/0017-routine-keeps-running/case.meta.md",
     "since": "2026-09-21"
   },
+  "hooks/_approval.mjs": {
+    "tests": "tests/hooks.test.mjs"
+  },
   "hooks/_lib.mjs": {
     "tests": "tests/hooks.test.mjs"
   },

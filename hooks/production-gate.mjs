@@ -5,11 +5,12 @@
 // prose in comments, quoted-tag heredocs and sink quotes is not a command; a match that lives only there is
 // grey → ask (the host's own prompt). Everything else, quotes included, is judged exactly as before.
 // CYCLE_GATE_LEGACY=1, set by a person, restores whole-string judgement.
-import { join, resolve } from "node:path";
+import { join, resolve, dirname } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import { execSync, execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { root, today, readJson, gateRepo, repoFor, isMain, main, viewFor, walk, gateLog, remoteTail } from "./_lib.mjs";
+import { root, today, readJson, gateRepo, repoFor, isMain, main, viewFor, walk, gateLog, remoteTail, approvalFiles, approvalWritePath, readApproval, stateDir } from "./_lib.mjs";
+import { checkApproval, explain } from "./_approval.mjs";
 
 export const DEFAULTS = [
   /--prod\b/, /--target production/, /--env production/,
@@ -61,12 +62,14 @@ function rulesHit(text, patterns) {
   return p ? `gate.json pattern "${p}"` : null;
 }
 
+/** The approval checks of this run, by repository: the refusal explains them. */
+const lastCheck = new Map();
+
 function approved(repo) {
   const sessionRepo = repoFor(root());
   if (process.env.RELEASE_APPROVAL && sessionRepo && sessionRepo === repo) return true;
-  const f = join(repo, ".cycle/release-approval");
-  if (!existsSync(f)) return false;
-  try { return readFileSync(f, "utf8").includes(today()); } catch { return false; }
+  const c = checkApproval(repo); lastCheck.set(repo, c);
+  return c.ok;
 }
 
 function configOf(repo) {
@@ -81,7 +84,8 @@ function configOf(repo) {
 const cut = (raw) => (raw.length > 300 ? raw.slice(0, 300) + " […]" : raw);
 
 function refusal(raw, repo, hit, where) {
-  const f = join(repo, ".cycle/release-approval");
+  const f = approvalWritePath(repo); const st = stateDir(repo); const shared = st.shared;
+  const c = lastCheck.get(repo) || checkApproval(repo);
   const sessionRepo = repoFor(root());
   const sameRepo = sessionRepo && sessionRepo === repo;
   const scopeMiss = process.env.RELEASE_APPROVAL && !sameRepo
@@ -89,11 +93,13 @@ function refusal(raw, repo, hit, where) {
     : "";
   const firstTime = !sameRepo ? `\nThis repository was not gated from this session before; it is now.` : "";
   return `cycle · PRODUCTION GATE: this command looks like a production deploy (matched: ${hit}${where}) and there is no release approval.
+${explain(c, repo)}
 Command: ${cut(raw)}
 Repository judged: ${repo}${scopeMiss}${firstTime}
 A human (not the agent) does ONE of:
   1. export RELEASE_APPROVAL="<name> <reason>" in a session rooted in that repository, or
-  2. write ${f} with "<name> · ${today()} · <what is being released>".
+  2. in a terminal of your own:
+       ${shared ? `mkdir -p '${dirname(f)}' && ` : ""}printf '%s\\n' '<name> · ${c.today} · <what is being released>' > '${f}'${shared ? `\n     ${st.worktrees > 1 ? `Every one of the ${st.worktrees} registered worktrees of this repository sees it, on any branch; ` : ""}${join(repo, ".cycle/release-approval")} still works for that checkout alone.` : ""}
 Then run the command again. The agent never creates this file or variable. Repo-specific deploy commands go in ${join(repo, ".cycle/gate.json")} "patterns". The host may still apply its own permission rules after this gate.`;
 }
 
@@ -136,11 +142,14 @@ function isPublishingMethodRepo(repo, tails) {
 
 /** The approval for a publish names it: today's date, and the word publish/publica or the manifest's version. */
 function approvedForPublish(repo) {
-  const f = join(repo, ".cycle/release-approval");
-  let text = ""; try { text = readFileSync(f, "utf8"); } catch { return false; }
-  if (!text.includes(today())) return false;
   let version = ""; try { version = JSON.parse(readFileSync(join(repo, ".claude-plugin", "plugin.json"), "utf8")).version || ""; } catch { /* none */ }
-  return /publi(?:sh|ca)/i.test(text) || (!!version && text.includes(version));
+  const accept = (t) => {
+    const named = [...t.matchAll(/(?<![\d.])v?(\d{1,3}\.\d+\.\d+)(?![\d.])/g)].map(m => m[1]);   // x.y.z with a short major: a date like 2026.10.17 is not a version
+    if (named.length && !named.every(n => n === version)) return false;                     // a line that names a version is for that release only
+    return /publi(?:sh|ca)/i.test(t) || (!!version && t.includes(version));
+  };
+  const c = checkApproval(repo, { accept }); lastCheck.set(repo, c);
+  return c.ok;
 }
 
 /** Directories a segment can point git at: its cwd, every -C / --git-dir / GIT_DIR= / "(cd X" / "pushd X" it names. */
@@ -204,7 +213,7 @@ function publishGuard(raw, segs, sessionRepo) {
     if (here) {
       if (approvedForPublish(here)) return null;
       logTo(here);
-      return { block: `cycle · PRODUCTION GATE: this is a publish of the method (the remote is its public repository) and ${join(here, ".cycle/release-approval")} does not approve it today. A human writes that file with today's date and the word "publish" or the version being released. The agent never creates it.\nCommand: ${cut(raw)}\nRepository judged: ${here}\n` };
+      return { block: `cycle · PRODUCTION GATE: this is a publish of the method (the remote is its public repository) and ${approvalWritePath(here)} does not approve it today. A human writes that file with today's date and the word "publish" or the version being released. The agent never creates it.\n${explain(lastCheck.get(here) || checkApproval(here), here)}\nCommand: ${cut(raw)}\nRepository judged: ${here}\n` };
     }
     const known = [sessionRepo, ...repos].find(r => isPublishingMethodRepo(r, tails)) || null;
     const script = known ? join(known, "scripts", "publish.mjs") : "<method repository>/scripts/publish.mjs";

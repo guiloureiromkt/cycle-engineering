@@ -51,7 +51,7 @@ test("publish: clones the public repo into .cycle/work/publish/pub, replaces the
   assert.equal(git(bare, "log", "-1", "--format=%s", "main"), "0.8.0", "the public repo is untouched: nothing was pushed");
   assert.equal(git(repo, "status", "--porcelain"), "", "the parent sees nothing");
   assert.ok(r.stdout.includes(`cd ${pub} && git push origin HEAD:main && git push origin v0.9.1`), r.stdout);
-  assert.match(r.stdout, /a human writes \.cycle\/release-approval first/);
+  assert.match(r.stdout, /a human writes the release approval first/);
 });
 
 test("publish: runs twice without re-cloning, and refuses a dirty tree, a non-method repo and an unknown ref", () => {

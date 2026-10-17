@@ -157,8 +157,7 @@
       "branch_b": "master",
       "expect": "allow",
       "class": "branch seeded in b (master, not protected)",
-      "before": "allow",
-      "_b": "/tmp/gate-prose-3GBetQ"
+      "before": "allow"
     },
     {
       "id": "cd-other-repo-push-main",
@@ -166,8 +165,7 @@
       "branch_b": "main",
       "expect": "deny",
       "class": "b is on main",
-      "before": "deny",
-      "_b": "/tmp/gate-prose-gD8oXK"
+      "before": "deny"
     },
     {
       "id": "vault-note-mentions-workflow-run",
@@ -190,8 +188,7 @@
       "approval_in_a": true,
       "expect": "deny",
       "class": "every hit's repo needs approval",
-      "before": "deny",
-      "_b": "/tmp/gate-prose-fAekYG"
+      "before": "deny"
     },
     {
       "id": "commit-message-says-deploy-production",
@@ -448,8 +445,7 @@
       "snapshot_in_a": true,
       "expect": "deny",
       "class": "every destructive hit needs its repo's snapshot",
-      "before": "deny",
-      "_b": "/tmp/gate-prose-c7WleY"
+      "before": "deny"
     },
     {
       "id": "ssh-fed-heredoc-tar",
@@ -522,8 +518,49 @@
       "clone_of_homepage": true,
       "expect": "deny",
       "class": "tightening: the method's publish from outside its repository",
-      "before": "allow",
-      "_dir": "/tmp/gate-prose-home-brfxZo/scratch/pub"
+      "before": "allow"
+    },
+    {
+      "id": "shared-approval-covers-a-linked-worktree",
+      "command": "sh deploy.sh",
+      "patterns": [
+        "deploy.sh"
+      ],
+      "linked_worktree": true,
+      "approval": "shared",
+      "run_in": "linked",
+      "expect": "allow",
+      "class": "an approval in the repository's shared directory covers a sibling worktree",
+      "loosening": "an approval the owner writes once now covers every worktree of the repository (spec: areas of concern 2); only the owner's day bounds it (the use window was cut)",
+      "before": "deny",
+      "before_recorded_on": "ce2046f (hooks of v0.9.1)"
+    },
+    {
+      "id": "sibling-local-approval-does-not-cover-main",
+      "command": "sh deploy.sh",
+      "patterns": [
+        "deploy.sh"
+      ],
+      "linked_worktree": true,
+      "approval": "sibling-local",
+      "run_in": "main",
+      "expect": "deny",
+      "class": "an approval in a sibling worktree's own .cycle/ stays that checkout's",
+      "before": "deny",
+      "before_recorded_on": "ce2046f (hooks of v0.9.1)"
+    },
+    {
+      "id": "owners-evening-local-date-covers",
+      "command": "sh deploy.sh",
+      "patterns": [
+        "deploy.sh"
+      ],
+      "tz_pick": "differs-from-utc",
+      "expect": "allow",
+      "class": "an approval dated the owner's day covers even when UTC's date is another (21:00-24:00 in Brasília)",
+      "loosening": "the day is the owner's, counted in his timezone, not UTC's: the 23/09 and 27/09 refusals",
+      "before": "deny",
+      "before_recorded_on": "9ad888c (hooks of v0.9.1)"
     }
   ]
 }

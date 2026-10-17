@@ -14,7 +14,7 @@ In a repository with a `.cycle/` directory:
 - The cycle governs construction, not operation: a routine the repository runs (cron, Actions, a scheduled loop) writing its own outputs needs no plan; a routine that needs `main` opens a pull request (a change someone reviews before it lands). Put `.cycle/` in the repository you build, beside your routines, never above them; `/cycle:init` warns when it finds routines where it is asked to run.
 - Before build, a devil's advocate in a fresh context attacks the plan. When the change touches money, hours, permissions, schema, destructive data or a user-facing surface, a council reviews it too: five engineering seats always, a pool of marketing, content, UX, UI, CX, brand-voice, commercial, legal and data seats that sit when the plan lights their triggers, and a scenario seat that reads the plan across horizons without betting on one future. Then the Mule, a separate fresh-context agent, injects one improbable external shock and says what breaks.
 - Before the session says "done", a verifier in a separate context runs what was built.
-- A hook blocks production deploys unless a human wrote today's date into `.cycle/release-approval` (or set `RELEASE_APPROVAL`). The agent is blocked from writing that file.
+- A hook blocks production deploys unless a human wrote today's date into `.git/cycle/release-approval` (inside the repository's `.git` folder, which every worktree shares; `.cycle/release-approval` still works for one checkout) or set `RELEASE_APPROVAL`. The agent is blocked from writing those files.
 - A hook blocks destructive commands (`git reset --hard`, `rm -rf` inside the repo, `drop table`, `migrate reset`) unless a snapshot note from the last hour exists in `.cycle/work/`.
 - Every numbered task in the plan is its own commit. If you stop with an accepted plan and uncommitted changes, the session says so.
 
@@ -56,7 +56,7 @@ Each stage is a skill (`cycle:<stage>`). The table says what each one leaves in 
 | `cycle:plan` | `plans/<name>.md`: numbered tasks, files, risks, and the record of five gates (task graph, devil's advocate, pre-mortem, council, loop). | Accepted after the gates (`status: accepted`). Nothing is coded before this. |
 | `cycle:build` | One commit per numbered task; intermediates in `.cycle/work/<intent>/`. A change to the plan lands in the same commit as the code. | None. The accepted plan is the authorization. |
 | `cycle:test` | Test output pasted, not described; a verifier report from a fresh context; a gauntlet when the bar is comparative. | None. The separate-context verifier is the gate. |
-| `cycle:deploy` | A PR reviewed in three passes; the production command runs only with `.cycle/release-approval`. | Release approval, dated today, written by a human outside the agent. |
+| `cycle:deploy` | A PR reviewed in three passes; the production command runs only with `.git/cycle/release-approval` (or, for one checkout, `.cycle/release-approval`). | Release approval, dated today, written by a human outside the agent. |
 | `cycle:maintain` | New `intent/<name>.md` files from incidents, usage, security and backup checks. This is what closes the loop. | You triage the backlog (`/cycle:triage`). |
 
 Outside the ring sits `cycle:evolve`: it watches new models, skills and practices, and proposes changes to the method as PRs against this plugin, prefixed `evolve:`. A human merges or closes them; the agent never merges its own.

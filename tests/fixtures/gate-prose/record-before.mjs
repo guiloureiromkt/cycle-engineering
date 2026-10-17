@@ -13,6 +13,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const hooks = process.env.GATE_PROSE_HOOKS || join(here, "..", "..", "..", "hooks");   // GATE_PROSE_HOOKS: record against another checkout's hooks (the old ones)
 const file = join(here, "cases.json");
 const gitEnv = { GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1", GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" };
+const dayIn = (tz) => { const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, year: "numeric", month: "numeric", day: "numeric" }).formatToParts(Date.now()).map(x => [x.type, x.value])); return `${p.year.padStart(4, "0")}-${p.month.padStart(2, "0")}-${p.day.padStart(2, "0")}`; };
 const sh = (args, cwd) => spawnSync(args[0], args.slice(1), { cwd, encoding: "utf8", env: { ...process.env, ...gitEnv } });
 
 /** A throwaway gated repo on `branch`, with the given gate.json patterns. */
@@ -40,7 +41,7 @@ export function outcome(dir, command, extra = {}, extraEnv = {}) {
 }
 
 /** Prepare the directories a case names and return the command with placeholders filled. */
-export function prepare(c) {
+export async function prepare(c) {
   const dir = gated(c.patterns || [], c.branch || "main");
   mkdirSync("/tmp/other", { recursive: true });
   let command = c.command;
@@ -64,18 +65,34 @@ export function prepare(c) {
     command = command.replace(/\/tmp\/homeclone\b/g, clone);
     c._dir = clone;
   }
-  if (c.approval_in_a) writeFileSync(join(dir, ".cycle", "release-approval"), `t · ${new Date().toISOString().slice(0, 10)} · test fixture\n`);
+  if (c.linked_worktree) {                                       // a committed .cycle/ so a sibling worktree has it; the command runs in main or in the sibling
+    sh(["git", "add", "-f", ".cycle"], dir); sh(["git", "commit", "-q", "-m", "cycle"], dir);
+    const sibling = `${dir}-wt`; sh(["git", "worktree", "add", "-q", "-b", "wt", sibling], dir);
+    const day = new Date().toISOString().slice(0, 10);
+    if (c.approval === "shared") { mkdirSync(join(dir, ".git", "cycle"), { recursive: true }); writeFileSync(join(dir, ".git", "cycle", "release-approval"), `t · ${day} · test fixture\n`); }
+    if (c.approval === "sibling-local") writeFileSync(join(sibling, ".cycle", "release-approval"), `t · ${day} · test fixture\n`);
+    if (c.run_in === "linked") c._dir = sibling;
+  }
+  if (c.approval_in_a) writeFileSync(join(dir, ".cycle", "release-approval"), `t · ${dayIn()} · test fixture\n`);
+  const utcDay = new Date().toISOString().slice(0, 10);
+  if (c.tz_pick === "differs-from-utc") {                        // a zone whose date is not UTC's right now (one of the two always is): v0.9.1 ignores TZ and counts UTC, the new gate counts the owner's day
+    const tz = dayIn("Pacific/Kiritimati") !== utcDay ? "Pacific/Kiritimati" : "Pacific/Pago_Pago";
+    writeFileSync(join(dir, ".cycle", "release-approval"), `t · ${dayIn(tz)} · test fixture\n`);
+    env = { ...env, TZ: tz };
+  }
   return { dir: c._dir || dir, command, env };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const data = JSON.parse(readFileSync(file, "utf8"));
+  const sha = sh(["git", "rev-parse", "--short", "HEAD"], join(here, "..", "..", "..")).stdout.trim();
   for (const c of data.cases) {
-    const { dir, command, env } = prepare(c);
+    if (c.before !== undefined) continue;                       // the baseline of an old case is never re-recorded
+    const { dir, command, env } = await prepare(c);
     c.before = outcome(dir, command, {}, env);
+    c.before_recorded_on = `${sha} (hooks of ${process.env.GATE_PROSE_LABEL || "the working tree"})`;
   }
-  data.recorded_on = sh(["git", "rev-parse", "--short", "HEAD"], join(here, "..", "..", "..")).stdout.trim();
+  for (const c of data.cases) { delete c._dir; delete c._b; }   // fixture paths are machine paths; the package carries none
   writeFileSync(file, JSON.stringify(data, null, 2) + "\n");
-  console.log(`recorded_on ${data.recorded_on}`);
-  console.log(data.cases.map((c) => `${c.before.padEnd(5)} → ${c.expect.padEnd(5)} ${c.id}`).join("\n"));
+  console.log(data.cases.filter((c) => c.before_recorded_on).map((c) => `${c.before.padEnd(5)} → ${c.expect.padEnd(5)} ${c.id}`).join("\n"));
 }

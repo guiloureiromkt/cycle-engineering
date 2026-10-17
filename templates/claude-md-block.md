@@ -10,7 +10,7 @@ This repo runs the cycle: intent → research → spec → plan → build → te
 - Rule 3 · Commit after every numbered task of the plan. Intermediate files go in `.cycle/work/<intent>/`.
 - Rule 4 · Before any destructive command, write `.cycle/work/<intent>/snapshot.md` (what was saved, how to restore).
 - Before saying "done": run test · lint · build and paste the output. If a test fails, fix the code, not the test.
-- Production deploy passes the gate (`RELEASE_APPROVAL` or `.cycle/release-approval`, written by a human). The agent never creates the approval.
+- Production deploy passes the gate (`RELEASE_APPROVAL`, or `.git/cycle/release-approval` inside the repository's `.git` folder, shared by every worktree, or `.cycle/release-approval` for one checkout; written by a human). The agent never creates the approval.
 - Commands: test `none` · lint `none` · build `none` · rollback `none`.
 - A mistake repeated twice becomes a line under "What Claude gets wrong here".
 

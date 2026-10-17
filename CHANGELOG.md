@@ -4,6 +4,31 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-10-17
+
+The release approval had two defects that cost the owner real nights: it counted the date in UTC (an approval written at 22:00 in Brasília was already "tomorrow's" and the push was refused), and it belonged to one checkout, while the owner works in many worktrees (26 in one repository). Closed as two intents through the whole ring: research, spec, plan (five gates each, the advocate, the council and the Mule in fresh contexts), build, a final review in a fresh context, with every block of code run in a scratch clone before the plans were written.
+
+### Added
+- **A shared state directory per repository** (`stateDir`, `approvalFiles`, `approvalWritePath`, `readApproval` in `hooks/_lib.mjs`). The untracked state that more than one worktree must see lives in `<git-common-dir>/cycle/`: the release approval and the gate's outcome log. It is used only when git answers, the common dir is named `.git`, the checkout is the repository's top level, and it is registered (the main worktree, or a linked one whose back-link, absolute or relative, names its `.git`). The approval is looked up there first, then in the checkout's own `.cycle/` (still working). Not shared by design, with the checkout's own `.cycle/` as the fallback: a sub-folder, a bare repository, a separate git dir, a forged `.git` file. A swapped shared folder (a symlink, a plain file) refuses outright. A checkout git no longer lists, or lists under another path (a mount, a container), gets a one-line `problem` in the refusal and at session start, and is told not to run `git worktree repair` from that view.
+- **The owner's day** (`hooks/_approval.mjs`). A file passes with a `YYYY-MM-DD` token equal to today in the owner's timezone: the machine's own zone, or `timezone` in `.cycle/config.json` only on a machine at UTC+0 (a runner, a VPS), because that file is the agent's to write; UTC, said aloud, when neither is usable. The date is built from numeric parts and padded in code.
+- **A refusal that says why.** It leads with a problem or a refused file and what to do, then the date and zone expected, where it looked, a ready one-line command with quoted paths, and the scope ("every one of the N registered worktrees, on any branch"). It never tells the reader to edit `.cycle/config.json`. Each `gate.log` line ends with `@<checkout>`.
+- **`protect-cycle` protects the whole shared folder**: any Write/Edit under it, with `./`, `//` and `..` normalised and the nearest existing folder followed through symlinks; a Bash command that names `.git/cycle` (doubled slashes and `./` included) and is not plainly read-only. A command that reaches the folder without naming it (`cd .git; cd cycle; ...`, a glob, a path built at run time) is not caught, as for `.cycle/` since 0.9.0. Its message tells the reader to read the folder with `cat`, `grep` or `tail`.
+- The config key `timezone`; two replay cases for the shared place and one for the owner's evening; the harness no longer writes machine paths into `cases.json`.
+
+### Changed
+- The approval's date is the owner's local day, not UTC's; a machine whose zone cannot be determined (`TZ=""`, an unknown name) counts in UTC and the refusal says so. Every doc that said where to write the approval says the shared place first, in plain words in the READMEs.
+- `skills/maintain` reads the shared log and counts asks per checkout.
+
+### Fixed
+- An approval for the method's publish that names a version now covers only that version: the 0.9.1 line (`publish 0.9.1`, dated the same day) would have covered the 0.9.2 publish, because the word "publish" was enough. Found by asking the gate before pushing 0.9.2.
+- `find -delete`, `-exec`, `-ok` and friends were treated as reading by `protect-cycle` (find is on its read-only list): a hole older than this release.
+
+### Not shipped
+- **A use window for the approval** (cover one release for 120 minutes after its first gated command, then set the file aside) was built and removed before merge: the final review found three new ways to revive or extend an approval through it and a publish covered by a non-publish approval, which is the number the plan's cut line names. An approval still covers its whole day, as in 0.9.1. What was learned is in a draft intent.
+
+### Proof
+`npm test` green on the branch (the counts are in the run ledgers); the shared lookup, the registration check, the symlink reader, the configured-zone rule and the refusal's advice each seen red first; two mutations (the gate counting UTC again, the configured zone winning on any machine) each turn a named test red. Known and left: a Bash command that builds the path at run time (`cd .git; cd cycle; ...`, a glob) still reaches the shared folder, as it reaches `.cycle/release-approval` since 0.9.0; `RELEASE_APPROVAL` has no bound.
+
 ## [0.9.1] - 2026-10-16
 
 The publish of 0.9.0 went out from a clone in `/tmp`: the production gate judged the push by the session's repository (the vault) and never fired. The owner's word and a green `npm run gate` covered it; the file a human writes did not get its turn. Closed the same night as an incident → intent → research → spec → plan (three designs through the gates) → build, with a fresh reviewer and a separate verifier.

@@ -5,11 +5,11 @@
 //   - exit 0 = allow · exit 1 = non-blocking error · exit 2 = block (stderr goes to Claude).
 //   - git unavailable / not a repo → allow. Malformed JSON or unreadable config → block.
 //   - stderr never contains "no such file" or "can't open" (Claude Code downgrades those to non-blocking).
-import { readFileSync, existsSync, readdirSync, realpathSync, mkdirSync, writeFileSync, appendFileSync } from "node:fs";
-import { join, resolve, dirname } from "node:path";
+import { readFileSync, existsSync, readdirSync, realpathSync, lstatSync, mkdirSync, writeFileSync, appendFileSync } from "node:fs";
+import { join, resolve, dirname, basename } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { execSync } from "node:child_process";
+import { execSync, execFileSync } from "node:child_process";
 
 export const root = () => process.env.CLAUDE_PROJECT_DIR || process.cwd();
 export const today = () => new Date().toISOString().slice(0, 10);
@@ -331,15 +331,94 @@ export function walk(view, start) {
   return out;
 }
 
+// ─── the repository's shared state directory (2026-10-17) ─────────────────────────
+const stateMemo = new Map();
+/** Where the UNTRACKED state that more than one worktree must see lives (the release approval, the gate log).
+ *  `{ dir, shared, linked, worktrees }`. `shared` is true and `dir` is `<git-common-dir>/cycle` only when git
+ *  answers, the common dir is named `.git`, `repo` itself is the top level of its checkout (spec R1: never a
+ *  sub-folder), and that checkout is registered: it is the main worktree (its git dir IS the common dir and the
+ *  common dir sits in it), or a linked one whose git dir is a `<common>/worktrees/<name>` entry whose back-link
+ *  names `<top>/.git`. Anything else — no git, not a repository, a bare repository, a separate git dir, a
+ *  `.git` file forged to point into another repository, a state directory swapped for a symlink — is the
+ *  checkout's own `.cycle/`, today's behaviour. When the fallback has a CAUSE the owner can act on (the folder swapped
+ *  for a link or a plain file, a linked worktree that its repository no longer lists) `problem` says it in one line,
+ *  so a refusal is never silent about why. A swapped folder also sets `blocked`: the shared state is exactly what the
+ *  approval and its record live in, so the gate refuses outright instead of believing a local file. Memoised per process; the hooks are short-lived. */
+export function stateDir(repo) {
+  const local = { dir: join(repo || "", ".cycle"), shared: false, linked: false, worktrees: 1 };
+  if (!repo) return local;
+  if (stateMemo.has(repo)) return stateMemo.get(repo);
+  let out = local;
+  try {
+    const env = { ...process.env };
+    for (const k of ["GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"]) delete env[k];
+    const lines = execFileSync("git", ["rev-parse", "--git-common-dir", "--git-dir", "--show-toplevel"], { cwd: repo, env, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).split("\n");
+    const common = realpathSync(resolve(repo, lines[0].trim()));
+    const gitdir = realpathSync(resolve(repo, lines[1].trim()));
+    const top = realpathSync(lines[2].trim());
+    if (top === realpathSync(repo) && basename(common) === ".git") {
+      const wt = join(common, "worktrees");
+      const entries = existsSync(wt) ? readdirSync(wt) : [];
+      const main = gitdir === common && dirname(common) === top;
+      const backlink = (e) => realpathSync(resolve(join(wt, e), readFileSync(join(wt, e, "gitdir"), "utf8").trim()));   // relative since git 2.48: resolved against the entry
+      const linked = !main && gitdir !== common && entries.some(e => { try { return realpathSync(join(wt, e)) === gitdir && backlink(e) === join(top, ".git"); } catch { return false; } });
+      let swapped = null;                                           // the shared folder replaced by a link, or by a plain file
+      try { const st = lstatSync(join(common, "cycle")); swapped = st.isSymbolicLink() ? "is a symbolic link" : st.isDirectory() ? null : "is not a folder"; } catch { /* absent: fine */ }
+      if ((main || linked) && !swapped) out = { dir: join(common, "cycle"), shared: true, linked, worktrees: entries.length + 1 };
+      else if (main || linked) out = { ...local, blocked: true, problem: `${join(common, "cycle")} ${swapped}, so the shared place cannot be trusted and the gate refuses until it is put right (a local approval file does not take its place)` };
+      else {
+        try {
+          if (lstatSync(join(top, ".git")).isFile()) {
+            let recorded = null; try { recorded = readFileSync(join(wt, basename(gitdir), "gitdir"), "utf8").trim(); } catch { /* its entry is gone */ }
+            out = { ...local, problem: recorded
+              ? `${top} is a linked worktree that its repository records at another path (${recorded}). If it was moved or renamed, "git worktree repair" run in the checkout fixes that; if this is the same checkout seen through a mount or a container, do NOT repair from here (it rewrites the records to this view) and run any repair from the terminal where it was created. Until then this checkout's own .cycle/ is used`
+              : `${top} looks like a linked worktree that its repository no longer lists (its entry is gone); "git worktree repair" run in the checkout can restore it, and until then this checkout's own .cycle/ is used` };
+          }
+        } catch { /* no .git here */ }
+      }
+    }
+  } catch {                                                       // git missing, not a repository, unreadable → the checkout's own .cycle/
+    try { if (lstatSync(join(repo, ".git")).isFile()) out = { ...local, problem: `${repo} has a .git pointer that git cannot read (a pruned or broken worktree entry, or a pointer to nowhere); "git worktree repair" run in the checkout can fix a real worktree, and until then this checkout's own .cycle/ is used` }; } catch { /* no .git here */ }
+  }
+  stateMemo.set(repo, out);
+  return out;
+}
+
+/** The files a release approval may be read from, in order: the shared one, then this checkout's own. */
+export function approvalFiles(repo) {
+  const s = stateDir(repo);
+  return [...(s.shared ? [join(s.dir, "release-approval")] : []), join(repo, ".cycle", "release-approval")];
+}
+/** The path a refusal tells the owner to write: the first of `approvalFiles`. */
+export const approvalWritePath = (repo) => approvalFiles(repo)[0];
+
+/** An approval file read the safe way: `{ text }`, `null` when absent, or `{ unsafe }` when it must not be trusted.
+ *  An agent can retarget an untracked directory or file with a symlink; the gate refuses to read through one. */
+export function readApproval(file, repo) {
+  let st; try { st = lstatSync(file); } catch { return null; }
+  if (st.isSymbolicLink()) return { unsafe: "is a symbolic link" };
+  if (!st.isFile()) return { unsafe: "is not a regular file" };
+  try {
+    const real = realpathSync(file);
+    const s = stateDir(repo);
+    const home = [join(realpathSync(repo), ".cycle", "release-approval"), ...(s.shared ? [join(s.dir, "release-approval")] : [])];   // s.dir is built from the real common dir: no realpath of a folder that may not exist yet
+    if (!home.includes(real)) return { unsafe: "is not where it claims to be (a parent folder is a symlink)" };
+    return { text: readFileSync(file, "utf8") };
+  } catch { return { unsafe: "cannot be read" }; }
+}
+
 // ─── the gate's outcome log (2026-10-16) ──────────────────────────────────────────
 /** One line per ask / deny / fallback in <repo>/.cycle/work/gate/gate.log: decision, kind, rule — never the command
  *  text, and never a URL's user:token part. A log that cannot be written never changes a decision. */
 export function gateLog(repo, decision, rule, kind) {
   try {
-    const dir = join(repo, ".cycle", "work", "gate");
+    const s = stateDir(repo);
+    const dir = s.shared ? join(s.dir, "gate") : join(repo, ".cycle", "work", "gate");
     mkdirSync(dir, { recursive: true });
-    const ig = join(dir, ".gitignore");
-    if (!existsSync(ig)) writeFileSync(ig, "*\n");                     // the folder ignores itself, whatever the repo-level ignore says
-    appendFileSync(join(dir, "gate.log"), `${new Date().toISOString()} ${decision} ${kind} ${String(rule).replace(/https?:\/\/[^\s@/]+@/g, "https://…@").slice(0, 80)}\n`);
+    if (!s.shared) {
+      const ig = join(dir, ".gitignore");
+      if (!existsSync(ig)) writeFileSync(ig, "*\n");                   // the folder ignores itself, whatever the repo-level ignore says
+    }
+    appendFileSync(join(dir, "gate.log"), `${new Date().toISOString()} ${decision} ${kind} ${String(rule).replace(/https?:\/\/[^\s@/]+@/g, "https://…@").slice(0, 80)} @${basename(repo)}\n`);
   } catch { /* see above */ }
 }

@@ -81,7 +81,7 @@ Você aceita o plano (`status: accepted`). Só então o agente pode editar códi
 
 Chame `cycle:build`. Cada tarefa do plano vira um commit. Depois, `cycle:test`: a saída dos testes aparece colada, não descrita, e um verificador em contexto novo roda o que foi construído antes de alguém dizer "pronto".
 
-Deploy e manutenção ficam pra depois do primeiro ciclo. Quando chegar lá: o portão de produção só abre com uma aprovação escrita por você, com a data de hoje, em `.cycle/release-approval`. O agente não consegue escrever esse arquivo.
+Deploy e manutenção ficam pra depois do primeiro ciclo. Quando chegar lá: o portão de produção só abre com uma aprovação escrita por você, com a data de hoje, em `.git/cycle/release-approval` (dentro da pasta `.git` do repositório; todos os worktrees enxergam) ou, só para aquele checkout, em `.cycle/release-approval`. O agente não consegue escrever esses arquivos.
 
 ## O que você vai ver de diferente
 

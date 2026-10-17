@@ -74,7 +74,7 @@ const lines = [
   "",
   `  cd ${pub} && ${cmds[0]} && ${cmds[1]}`,
   "",
-  `The gate refuses until a human writes .cycle/release-approval first: "<name> · <today> · publish ${version}". Never set the variable or write the file from an agent.`,
+  `The gate refuses until a human writes the release approval first (the path the refusal prints): "<name> · <today> · publish ${version}". Never set the variable or write the file from an agent.`,
 ];
 if (!covered) lines.push(`⚠ publish: .cycle/gate.json has no pattern covering both push commands; the publish guard still applies (the remote is the method's), but add "git push origin" to patterns so every push to this remote is gated.`);
 console.log(lines.join("\n"));

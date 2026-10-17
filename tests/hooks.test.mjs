@@ -4,9 +4,9 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, utimesSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, utimesSync, existsSync, readdirSync, realpathSync, symlinkSync, renameSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, dirname } from "node:path";
+import { join, dirname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { commandDir, repoFor, gateRepo, commandView, walk, viewFor, remoteTail } from "../hooks/_lib.mjs";
@@ -48,8 +48,9 @@ function write(dir, rel, content = "x\n") {
   writeFileSync(join(dir, rel), content);
 }
 const bash = (command, cwd) => ({ tool_name: "Bash", tool_input: { command }, ...(cwd ? { cwd } : {}) });
-const today = () => new Date().toISOString().slice(0, 10);
-const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+const _tzNow = (ms) => { const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, year: "numeric", month: "numeric", day: "numeric" }).formatToParts(ms).map(x => [x.type, x.value])); return `${p.year.padStart(4, "0")}-${p.month.padStart(2, "0")}-${p.day.padStart(2, "0")}`; };
+const today = () => _tzNow(Date.now());
+const daysAgo = (n) => _tzNow(Date.now() - n * 86400000);
 
 /** Run one hook the way Claude Code does. Asserts stderr hygiene on every call. */
 function runHook(name, input, dir, extraEnv = {}) {
@@ -141,6 +142,7 @@ test("production gate: session outside, deploy into a gated repo → blocked, na
   const r = runHook("production-gate.mjs", bash("./deploy.sh --prod", target), session);
   assert.equal(r.status, 2);
   assert.ok(r.stderr.includes(join(target, ".cycle/release-approval")), "must print the absolute path it wants");
+  assert.ok(r.stderr.includes(join(target, ".git", "cycle", "release-approval")), "and the shared path, first");
   assert.match(r.stderr, /not gated from this session before/, "the first block must not read as a regression");
 });
 
@@ -563,8 +565,8 @@ test("gate-prose: before values were recorded by the replay script at a known co
 });
 
 for (const c of GATE_PROSE.cases) {
-  test(`gate-prose ${c.id}: ${c.before} → ${c.expect}`, () => {
-    const { dir, command, env } = prepareCase({ ...c });
+  test(`gate-prose ${c.id}: ${c.before} → ${c.expect}`, async () => {
+    const { dir, command, env } = await prepareCase({ ...c });
     const got = replay(dir, command, {}, env);
     assert.equal(got, c.expect, `${c.id} (${c.class})`);
   });
@@ -574,7 +576,7 @@ test("never looser: a case that denied before may only stop denying with a decla
   const undeclared = GATE_PROSE.cases.filter((c) => c.before === "deny" && c.expect !== "deny" && !c.loosening);
   assert.deepEqual(undeclared.map((c) => c.id), [], "a deny became something else without a declared reason");
   const toAllow = GATE_PROSE.cases.filter((c) => c.before === "deny" && c.expect === "allow");
-  assert.ok(toAllow.length <= 5, "more deny→allow cases than the plan declared");
+  assert.ok(toAllow.length <= 6, "more deny→allow cases than the plans declared (6: the four of 0.9.0, the shared approval and the owner's evening of 0.9.2)");
 });
 
 // ─── pre-bash outcomes (2026-10-16 · Task 6) ─────────────────────────────────────
@@ -620,8 +622,7 @@ test("gate/gate.log: one line per ask/deny with decision, kind and rule — neve
   preBashRaw(dir, GREY);
   preBashRaw(dir, "git push https://u:tok@example.com/x.git main");
   preBashRaw(dir, "git status");
-  const log = readFileSync(join(dir, ".cycle", "work", "gate", "gate.log"), "utf8").trim().split("\n");
-  assert.equal(readFileSync(join(dir, ".cycle", "work", "gate", ".gitignore"), "utf8").trim(), "*", "the log folder ignores itself");
+  const log = readFileSync(join(dir, ".git", "cycle", "gate", "gate.log"), "utf8").trim().split("\n");
   assert.equal(log.length, 2, log.join("\n"));
   assert.match(log[0], /^\d{4}-\d{2}-\d{2}T\S+ ask removed /);
   assert.match(log[1], /^\d{4}-\d{2}-\d{2}T\S+ deny segment push to protected branch main/);
@@ -697,7 +698,7 @@ test("publish rule: a push to the method's public repo from a clone OUTSIDE the 
   assert.equal(r.status, 2, r.stderr);
   assert.match(r.stderr, /publish of the method from outside its repository/);
   assert.match(r.stderr, /scripts\/publish\.mjs/);
-  writeFileSync(join(method, ".cycle", "release-approval"), `t · ${new Date().toISOString().slice(0, 10)} · publish 9.9.9\n`);
+  writeFileSync(join(method, ".cycle", "release-approval"), `t · ${today()} · publish 9.9.9\n`);
   assert.equal(pushFrom(tmpClone, "git push origin v9.9.9", pluginRoot).status, 2, "no approval anywhere lets an outside publish through");
 });
 
@@ -708,9 +709,9 @@ test("publish rule: the same push from a clone nested under <method>/.cycle/work
   assert.equal(a.status, 2, a.stderr);
   assert.match(a.stderr, /publish of the method/);
   assert.ok(a.stderr.includes(`Repository judged: ${method}\n`), a.stderr);
-  writeFileSync(join(method, ".cycle", "release-approval"), `t · ${new Date().toISOString().slice(0, 10)} · publish 9.9.9\n`);
+  writeFileSync(join(method, ".cycle", "release-approval"), `t · ${today()} · publish 9.9.9\n`);
   assert.equal(pushFrom(nested, "git push origin v9.9.9", pluginRoot).status, 0);
-  assert.match(readFileSync(join(method, ".cycle", "work", "gate", "gate.log"), "utf8"), /deny segment publish of the method/);
+  assert.match(readFileSync(join(method, ".git", "cycle", "gate", "gate.log"), "utf8"), /deny segment publish of the method/);
 });
 
 test("publish rule: the routes the council listed all deny outside the method repo, and the remote-name injection never runs", () => {
@@ -758,7 +759,7 @@ test("publish rule: inside the method repo a push to the public repo needs the m
   const nested = cloneAt(join(method, ".cycle", "work", "publish", "pub"));
   git(nested, "remote", "add", "upstream", bare);
   for (const cmd of ["git push --tags origin", "git push upstream v9.9.9"]) assert.equal(pushFrom(nested, cmd, pluginRoot).status, 2, cmd);
-  writeFileSync(join(method, ".cycle", "release-approval"), `t · ${new Date().toISOString().slice(0, 10)} · publish 9.9.9\n`);
+  writeFileSync(join(method, ".cycle", "release-approval"), `t · ${today()} · publish 9.9.9\n`);
   assert.equal(pushFrom(nested, "git push upstream v9.9.9", pluginRoot).status, 0);
 });
 
@@ -839,4 +840,438 @@ test("publish guard: a deny in an ungated directory never creates a .cycle there
 test("publish guard: the manifest's homepage is pinned to the upstream tail", () => {
   const manifest = JSON.parse(readFileSync(join(HOOKS, "..", ".claude-plugin", "plugin.json"), "utf8"));
   assert.equal(remoteTail(manifest.homepage), "guiloureiromkt/cycle-engineering");
+});
+
+// ───────────── shared state across worktrees (2026-10-17) ─────────────
+/** A gated main checkout (`.cycle/config.json` and `gate.json` committed, so every worktree has them), a sibling
+ *  worktree next to it and a nested one under .claude/worktrees, like the owner's tools make. */
+function worktreeWorld() {
+  const main = repo({ cycle: false });
+  mkdirSync(join(main, ".cycle"), { recursive: true });
+  writeFileSync(join(main, ".cycle", "config.json"), "{}");
+  writeFileSync(join(main, ".cycle", "gate.json"), JSON.stringify({ patterns: ["deploy.sh"] }));
+  git(main, "add", "-f", ".cycle"); git(main, "commit", "-q", "-m", "cycle");
+  const sibling = join(dirname(main), basename(main) + "-wt"); dirs.push(sibling);
+  git(main, "worktree", "add", "-q", "-b", "wt", sibling);
+  const nested = join(main, ".claude", "worktrees", "n1");
+  git(main, "worktree", "add", "-q", "-b", "n1", nested);
+  return { main, sibling, nested, common: join(realpathSync(main), ".git") };
+}
+const plainDir = () => { const d = mkdtempSync(join(tmpdir(), "plain-")); dirs.push(d); mkdirSync(join(d, ".cycle")); return d; };
+
+test("stateDir: the main checkout, a sibling worktree and a nested one share <common>/cycle; linked ones are flagged and counted", async () => {
+  const L = await import("../hooks/_lib.mjs");
+  const w = worktreeWorld();
+  const want = join(w.common, "cycle");
+  for (const d of [w.main, w.sibling, w.nested]) { const s = L.stateDir(d); assert.equal(s.shared, true, d); assert.equal(s.dir, want, d); }
+  assert.equal(L.stateDir(w.main).linked, false);
+  assert.equal(L.stateDir(w.sibling).linked, true);
+  assert.equal(L.stateDir(w.nested).linked, true);
+  assert.equal(L.stateDir(w.main).worktrees, 3);
+});
+
+test("stateDir: a worktree made with relative back-links is shared too (git 2.48 --relative-paths)", async (t) => {
+  const L = await import("../hooks/_lib.mjs");
+  const w = worktreeWorld();
+  const rel = join(dirname(w.main), basename(w.main) + "-rel"); dirs.push(rel);
+  try { git(w.main, "worktree", "add", "-q", "--relative-paths", "-b", "rel", rel); } catch { t.skip("this git has no --relative-paths"); return; }
+  assert.equal(L.stateDir(rel).shared, true);
+  assert.equal(L.stateDir(rel).dir, join(w.common, "cycle"));
+});
+
+test("stateDir: fallback to the checkout's own .cycle/ for a sub-folder, a plain directory, a separate git dir, a bare repository and every forged .git file", async () => {
+  const L = await import("../hooks/_lib.mjs");
+  const w = worktreeWorld();
+  const local = (d) => { const s = L.stateDir(d); assert.equal(s.shared, false, d); assert.equal(s.dir, join(d, ".cycle"), d); };
+  mkdirSync(join(w.main, "sub", ".cycle"), { recursive: true });
+  local(join(w.main, "sub"));                                       // spec R1: the repository itself, not a folder inside it
+  local(plainDir());
+  assert.equal(L.stateDir("").shared, false);
+  const entry = readdirSync(join(w.common, "worktrees"))[0];
+  const forgedEntry = plainDir(); writeFileSync(join(forgedEntry, ".git"), `gitdir: ${join(w.common, "worktrees", entry)}\n`);
+  local(forgedEntry);                                                // a .git file pointing into a registered worktree's entry
+  const forgedCommon = plainDir(); writeFileSync(join(forgedCommon, ".git"), `gitdir: ${w.common}\n`);
+  local(forgedCommon);                                               // a .git file pointing at the common dir itself
+  const sepBase = mkdtempSync(join(tmpdir(), "sep-")); dirs.push(sepBase);
+  const sep = join(sepBase, "main"); mkdirSync(sep); git(sep, "init", "-q", "-b", "main", `--separate-git-dir=${join(sepBase, "main.git")}`);
+  writeFileSync(join(sep, "a"), "a"); git(sep, "add", "."); git(sep, "commit", "-q", "-m", "a"); mkdirSync(join(sep, ".cycle"));
+  const sepw = join(sepBase, "w"); git(sep, "worktree", "add", "-q", "-b", "w", sepw); mkdirSync(join(sepw, ".cycle"));
+  local(sep); local(sepw);                                           // a common dir not named .git: nothing shared, for the main checkout and its worktrees alike
+  const bare = join(sepBase, "bare.git"); git(sepBase, "init", "-q", "--bare", bare); mkdirSync(join(bare, ".cycle"));
+  local(bare);
+  const swapped = worktreeWorld();                                   // the shared directory replaced by a symlink
+  const elsewhere = mkdtempSync(join(tmpdir(), "else-")); dirs.push(elsewhere);
+  symlinkSync(elsewhere, join(swapped.common, "cycle"));
+  local(swapped.main); local(swapped.sibling);
+});
+
+test("stateDir: a swapped folder, a plain file in its place and a worktree moved (or seen under another path, or pruned) each come back with a problem line", async () => {
+  const L = await import("../hooks/_lib.mjs");
+  const a = worktreeWorld(); const elsewhere = mkdtempSync(join(tmpdir(), "else-")); dirs.push(elsewhere);
+  symlinkSync(elsewhere, join(a.common, "cycle"));
+  assert.match(L.stateDir(a.main).problem, /is a symbolic link, so the shared place cannot be trusted/); assert.equal(L.stateDir(a.main).blocked, true);
+  const b = worktreeWorld(); writeFileSync(join(b.common, "cycle"), "i am a file");
+  assert.match(L.stateDir(b.main).problem, /is not a folder/);
+  const c = worktreeWorld(); const moved = `${c.sibling}-moved`; dirs.push(moved); renameSync(c.sibling, moved);
+  const s = L.stateDir(moved);
+  assert.equal(s.shared, false); assert.match(s.problem, /records at another path/);
+  assert.match(s.problem, /do NOT repair from here/, "a checkout seen through a mount must not be told to repair from there");
+  const d = worktreeWorld(); const entry = readdirSync(join(d.common, "worktrees")).find(e => readFileSync(join(d.common, "worktrees", e, "gitdir"), "utf8").trim().startsWith(d.sibling));
+  writeFileSync(join(d.common, "worktrees", entry, "gitdir"), "/workspace/elsewhere/.git\n");        // the repository records the worktree under another path view
+  assert.match(L.stateDir(d.sibling).problem, /records at another path \(\/workspace\/elsewhere\/\.git\)/);
+  const e = worktreeWorld(); rmSync(join(e.common, "worktrees", readdirSync(join(e.common, "worktrees")).find(x => readFileSync(join(e.common, "worktrees", x, "gitdir"), "utf8").trim().startsWith(e.sibling))), { recursive: true });
+  assert.match(L.stateDir(e.sibling).problem, /has a \.git pointer that git cannot read/);
+  assert.equal(L.stateDir(worktreeWorld().main).problem, undefined, "a healthy checkout has no problem");
+});
+
+test("readApproval: a regular file is read, an absent one is null, a symlink and a symlinked .cycle are refused with a reason", async () => {
+  const L = await import("../hooks/_lib.mjs");
+  const w = worktreeWorld();
+  const f = join(w.common, "cycle", "release-approval");
+  assert.equal(L.readApproval(f, w.main), null);
+  mkdirSync(join(w.common, "cycle"), { recursive: true }); writeFileSync(f, "t · x\n");
+  assert.deepEqual(L.readApproval(f, w.main), { text: "t · x\n" });
+  rmSync(f); const target = join(mkdtempSync(join(tmpdir(), "else-")), "x"); dirs.push(dirname(target)); writeFileSync(target, "forged\n");
+  symlinkSync(target, f);
+  assert.deepEqual(L.readApproval(f, w.main), { unsafe: "is a symbolic link" });
+  const other = plainDir(); const real = mkdtempSync(join(tmpdir(), "else-")); dirs.push(real);
+  rmSync(join(other, ".cycle"), { recursive: true }); mkdirSync(join(real, "c")); writeFileSync(join(real, "c", "release-approval"), "forged\n");
+  symlinkSync(join(real, "c"), join(other, ".cycle"));
+  assert.match(L.readApproval(join(other, ".cycle", "release-approval"), other).unsafe, /not where it claims/);
+});
+
+test("approvalFiles: the shared file first, then the checkout's own; the write path is the first", async () => {
+  const L = await import("../hooks/_lib.mjs");
+  const w = worktreeWorld();
+  assert.deepEqual(L.approvalFiles(w.sibling), [join(w.common, "cycle", "release-approval"), join(w.sibling, ".cycle", "release-approval")]);
+  assert.equal(L.approvalWritePath(w.sibling), join(w.common, "cycle", "release-approval"));
+  const plain = plainDir();
+  assert.deepEqual(L.approvalFiles(plain), [join(plain, ".cycle", "release-approval")]);
+});
+
+test("gate log: a deny judged from a sibling worktree and one from the main checkout land in one shared file", async () => {
+  const L = await import("../hooks/_lib.mjs");
+  const w = worktreeWorld();
+  L.gateLog(w.main, "deny", "rule-a", "segment");
+  L.gateLog(w.sibling, "deny", "rule-b", "segment");
+  const txt = readFileSync(join(w.common, "cycle", "gate", "gate.log"), "utf8");
+  assert.match(txt, new RegExp(`rule-a @${basename(w.main)}$`, "m")); assert.match(txt, new RegExp(`rule-b @${basename(w.sibling)}$`, "m"), "each line names its checkout");
+  assert.ok(!existsSync(join(w.main, ".cycle", "work", "gate", "gate.log")));
+  assert.ok(!existsSync(join(w.sibling, ".cycle", "work", "gate", "gate.log")));
+});
+
+test("gate log: outside a git repository it still writes where it did (and the folder ignores itself)", async () => {
+  const L = await import("../hooks/_lib.mjs");
+  const plain = mkdtempSync(join(tmpdir(), "plain-")); dirs.push(plain); mkdirSync(join(plain, ".cycle"));
+  L.gateLog(plain, "ask", "rule-c", "removed");
+  assert.match(readFileSync(join(plain, ".cycle", "work", "gate", "gate.log"), "utf8"), /rule-c/);
+  assert.equal(readFileSync(join(plain, ".cycle", "work", "gate", ".gitignore"), "utf8"), "*\n");
+});
+
+test("approval: one written in the shared place allows a gated command from the main checkout, a sibling and a nested worktree", () => {
+  const w = worktreeWorld();
+  mkdirSync(join(w.common, "cycle"), { recursive: true });
+  writeFileSync(join(w.common, "cycle", "release-approval"), `t · ${today()} · v1\n`);
+  for (const d of [w.main, w.sibling, w.nested]) assert.equal(gate("sh deploy.sh", d), 0, d);
+});
+
+test("approval: one in only a sibling worktree's own .cycle/ covers that checkout, not the main one; the refusal names the shared path and a mkdir", () => {
+  const w = worktreeWorld();
+  writeFileSync(join(w.sibling, ".cycle", "release-approval"), `t · ${today()} · v1\n`);
+  assert.equal(gate("sh deploy.sh", w.sibling), 0, "its own checkout still honours the old place");
+  const r = runHook("production-gate.mjs", bash("sh deploy.sh"), w.main);
+  assert.equal(r.status, 2, r.stderr);
+  assert.ok(r.stderr.includes(join(w.common, "cycle", "release-approval")), r.stderr);
+  assert.match(r.stderr, /mkdir -p '.*' && printf '%s\\n' '<name> · \d{4}-\d{2}-\d{2} · <what is being released>' > '/);
+  assert.match(r.stderr, /Every one of the 3 registered worktrees of this repository sees it, on any branch/);
+  assert.match(r.stderr, /still works for that checkout alone/);
+});
+
+test("approval: a forged .git file does not borrow the owner's shared approval", () => {
+  const w = worktreeWorld();
+  mkdirSync(join(w.common, "cycle"), { recursive: true });
+  writeFileSync(join(w.common, "cycle", "release-approval"), `t · ${today()} · v1\n`);
+  for (const target of [join(w.common, "worktrees", readdirSync(join(w.common, "worktrees"))[0]), w.common]) {
+    const forged = mkdtempSync(join(tmpdir(), "forged-")); dirs.push(forged);
+    mkdirSync(join(forged, ".cycle"));
+    writeFileSync(join(forged, ".cycle", "gate.json"), JSON.stringify({ patterns: ["deploy.sh"] }));
+    writeFileSync(join(forged, ".git"), `gitdir: ${target}\n`);
+    assert.equal(gate("sh deploy.sh", forged), 2, target);
+  }
+});
+
+test("approval: a symlinked approval file or a swapped state directory is never read, and the refusal says so", () => {
+  const w = worktreeWorld();
+  const elsewhere = mkdtempSync(join(tmpdir(), "else-")); dirs.push(elsewhere);
+  writeFileSync(join(elsewhere, "release-approval"), `t · ${today()} · forged\n`);
+  mkdirSync(join(w.common, "cycle"), { recursive: true });
+  symlinkSync(join(elsewhere, "release-approval"), join(w.common, "cycle", "release-approval"));       // (a) a symlinked file in a real folder
+  let r = runHook("production-gate.mjs", bash("sh deploy.sh"), w.main);
+  assert.equal(r.status, 2, r.stderr); assert.match(r.stderr, /is a symbolic link; the gate does not read it\. Remove it \(or ask the owner to\), then write a regular file/);
+  assert.ok(r.stderr.indexOf("is a symbolic link") < r.stderr.indexOf("A human (not the agent)"), "the rejection comes first, before the instructions");
+  rmSync(join(w.common, "cycle"), { recursive: true, force: true });
+  symlinkSync(elsewhere, join(w.common, "cycle"));                                                      // (b) the whole folder swapped for a symlink
+  r = runHook("production-gate.mjs", bash("sh deploy.sh"), w.main);
+  assert.equal(r.status, 2); assert.match(r.stderr, /is a symbolic link, so the shared place cannot be trusted/);
+  assert.equal(gate("sh deploy.sh", w.sibling), 2);
+  writeFileSync(join(w.main, ".cycle", "release-approval"), `t · ${today()} · v1\n`);
+  assert.equal(gate("sh deploy.sh", w.main), 2, "a swapped shared folder refuses outright: a local approval file does not take its place");
+});
+
+test("publish rule: an approval in the method repository's shared place allows the push from the nested clone", () => {
+  const { pluginRoot, method, cloneAt } = methodWorld();
+  const nested = cloneAt(join(method, ".cycle", "work", "publish", "pub"));
+  const cmd = "git push origin HEAD:main";
+  assert.equal(pushFrom(nested, cmd, pluginRoot).status, 2);
+  const shared = join(method, ".git", "cycle"); mkdirSync(shared, { recursive: true });
+  writeFileSync(join(shared, "release-approval"), `t · ${today()} · publish 9.9.9\n`);
+  assert.equal(pushFrom(nested, cmd, pluginRoot).status, 0);
+});
+
+test("protect-cycle: the shared approval path is protected like the old one — straight, with ./ // .., through a symlinked folder, and the directory itself; reading stays allowed", () => {
+  const w = worktreeWorld();
+  const dir = join(w.common, "cycle"); mkdirSync(dir, { recursive: true });
+  const p = join(dir, "release-approval");
+  for (const tool of ["Write", "Edit", "MultiEdit"]) assert.equal(protect({ tool_name: tool, tool_input: { file_path: p, content: "x" } }, w.main), 2, tool);
+  for (const odd of [`${dir}/./release-approval`, `${dir}//release-approval`, `${dir}/x/../release-approval`, `${w.common}/cycle/../cycle/release-approval`])
+    assert.equal(protect({ tool_name: "Write", tool_input: { file_path: odd, content: "x" } }, w.main), 2, odd);
+  assert.equal(protect({ tool_name: "Write", tool_input: { file_path: join(w.main, ".cycle", ".", "release-approval"), content: "x" } }, w.main), 2, "the old path too");
+  const via = mkdtempSync(join(tmpdir(), "via-")); dirs.push(via); symlinkSync(dir, join(via, "l"));         // a symlink that reaches the folder
+  assert.equal(protect({ tool_name: "Write", tool_input: { file_path: join(via, "l", "release-approval"), content: "x" } }, w.main), 2, "through a symlinked parent");
+  assert.equal(protect(bash(`echo x > ${p}`), w.main), 2);
+  assert.equal(protect(bash(`cp /tmp/x ${p}`), w.main), 2);
+  assert.equal(protect(bash(`mv ${dir} ${dir}.old`), w.main), 2, "moving the folder away");
+  assert.equal(protect(bash(`ln -s /tmp/x ${w.common}/cycle`), w.main), 2, "replacing it by a link");
+  assert.equal(protect(bash(`cp -r ${dir} /tmp/y`), w.main), 2);
+  assert.equal(protect(bash(`cat ${p}`), w.main), 0);
+  assert.equal(protect(bash(`tail -n 5 ${dir}/gate/gate.log`), w.main), 0, "reading the log stays allowed");
+  assert.equal(protect(bash(`ls ${dir}`), w.main), 0);
+  assert.equal(protect({ tool_name: "Write", tool_input: { file_path: join(w.main, "docs", "release-approval.md"), content: "x" } }, w.main), 0, "a different file name is not the approval");
+});
+
+test("session-start: a linked worktree is told where the approval and the log live and how many share them; the main checkout is not", () => {
+  const w = worktreeWorld();
+  const say = (d) => JSON.parse(runHook("session-start.mjs", {}, d).stdout).hookSpecificOutput.additionalContext;
+  const linked = say(w.sibling);
+  assert.ok(linked.includes(join(w.common, "cycle")), linked);
+  assert.match(linked, /shared by 3 worktrees/);
+  assert.doesNotMatch(say(w.main), /shared by/);
+  const plain = mkdtempSync(join(tmpdir(), "plain-")); dirs.push(plain); mkdirSync(join(plain, ".cycle"));
+  assert.doesNotMatch(say(plain), /shared by/);
+  symlinkSync(mkdtempSync(join(tmpdir(), "else-")), join(w.common, "cycle"));
+  assert.match(say(w.main), /WARNING: .*is a symbolic link, so the shared place cannot be trusted/);
+});
+
+test("docs: every place that tells the owner where the approval goes names the shared place", () => {
+  const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+  for (const f of ["docs/CONTRACT.md", "skills/deploy/SKILL.md", "commands/cycle.md"]) {
+    assert.match(readFileSync(join(root, f), "utf8"), /<git-common-dir>\/cycle\/release-approval/, f);
+  }
+  for (const f of ["README.md", "README.pt-BR.md", "templates/claude-md-block.md", "CLAUDE.md"]) {       // plain words for a newcomer: the folder is spelled out
+    if (f === "CLAUDE.md" && !existsSync(join(root, f))) continue;                                      // a working-copy file (export-ignore): not in the shipped package
+    assert.match(readFileSync(join(root, f), "utf8"), /\.git\/cycle\/release-approval/, f);
+  }
+  assert.doesNotMatch(readFileSync(join(root, "skills/maintain/SKILL.md"), "utf8"), /\.cycle\/work\/gate\.log/, "the log's reader looks where the log is");
+});
+
+// ───────────── the approval's date (2026-10-17) ─────────────
+const tzDate = (tz, ms = Date.now()) => { const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, year: "numeric", month: "numeric", day: "numeric" }).formatToParts(ms).map(x => [x.type, x.value])); return `${p.year.padStart(4, "0")}-${p.month.padStart(2, "0")}-${p.day.padStart(2, "0")}`; };
+const utcDate = () => new Date().toISOString().slice(0, 10);
+/** A zone whose date differs from UTC's right now (Kiritimati is +14, Pago Pago -11: one of them always does). */
+const farZone = () => tzDate("Pacific/Kiritimati") !== utcDate() ? "Pacific/Kiritimati" : "Pacific/Pago_Pago";
+const deployRepo = () => { const d = repo(); write(d, ".cycle/gate.json", JSON.stringify({ patterns: ["deploy.sh"] })); return d; };
+
+test("approval date: the day is the owner's, the machine's own zone (the configured one only at UTC+0); an invalid zone is reported, never ignored", async () => {
+  const A = await import("../hooks/_approval.mjs");
+  const d = repo();
+  write(d, ".cycle/config.json", JSON.stringify({ timezone: "Pacific/Kiritimati" }));
+  const own = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (!/^(UTC|Etc\/UTC|Etc\/GMT|GMT)$/.test(own)) { assert.equal(A.resolveTimezone(d).tz, own); assert.equal(A.resolveTimezone(d).ignored, "Pacific/Kiritimati"); }   // a machine with its own zone keeps it
+  write(d, ".cycle/config.json", JSON.stringify({ timezone: "Not/AZone" }));
+  const r = A.resolveTimezone(d);
+  assert.equal(r.invalid, "Not/AZone"); assert.equal(r.source, "machine");
+  write(d, ".cycle/config.json", "{}");
+  assert.equal(A.resolveTimezone(d).source, "machine");
+  assert.notEqual(A.localDate("Pacific/Kiritimati"), A.localDate("Pacific/Pago_Pago"), "25 hours apart: their dates never coincide");
+  assert.equal(A.localDate("Pacific/Kiritimati", Date.parse("2026-10-17T02:30:00Z")), "2026-10-17");
+  assert.equal(A.localDate("America/Sao_Paulo", Date.parse("2026-10-17T02:30:00Z")), "2026-10-16");
+  assert.equal(A.localDate("UTC", Date.parse("2026-01-05T12:00:00Z")), "2026-01-05", "a single-digit month and day are padded");
+  assert.equal(A.localDate("Pacific/Kiritimati", Date.parse("2026-03-09T12:00:00Z")), "2026-03-10");
+  for (const z of ["UTC", "America/Sao_Paulo", "Pacific/Kiritimati", "Pacific/Pago_Pago", "Asia/Kolkata"]) assert.match(A.localDate(z), /^\d{4}-\d{2}-\d{2}$/, z);
+});
+
+test("approval date: a date token counts, a longer digit or hyphen run does not", async () => {
+  const A = await import("../hooks/_approval.mjs");
+  assert.equal(A.hasDateToken("Gui · 2026-10-17 · release", "2026-10-17"), true);
+  assert.equal(A.hasDateToken("2026-10-17", "2026-10-17"), true);
+  for (const bad of ["2026-10-170", "12026-10-17", "x-2026-10-17", "2026-10-17-1"]) assert.equal(A.hasDateToken(bad, "2026-10-17"), false, bad);
+});
+
+test("approval date: a machine timezone that cannot be determined (TZ empty, unknown, POSIX-style) falls back to UTC and says so, never an internal error", () => {
+  const d = deployRepo();
+  for (const tz of ["", "Foo/Bar", "BRT3"]) {
+    write(d, ".cycle/release-approval", `t · ${utcDate()} · v1\n`);
+    const r = runHook("production-gate.mjs", bash("sh deploy.sh"), d, { TZ: tz });
+    assert.doesNotMatch(r.stderr, /internal error/i, `TZ=${JSON.stringify(tz)}: ${r.stderr}`);
+    if (r.status === 2) assert.match(r.stderr, /could not be determined/, `TZ=${JSON.stringify(tz)}`);
+    else assert.equal(r.status, 0, `TZ=${JSON.stringify(tz)}: UTC date matches the file`);
+  }
+});
+
+test("approval: a file dated the owner's day passes in his zone and fails in the one 25 hours away", () => {
+  const d = deployRepo();
+  write(d, ".cycle/config.json", JSON.stringify({ timezone: "Pacific/Kiritimati" }));
+  write(d, ".cycle/release-approval", `t · ${tzDate("Pacific/Kiritimati")} · v1\n`);
+  assert.equal(gate("sh deploy.sh", d, { TZ: "UTC" }), 0);
+  write(d, ".cycle/config.json", JSON.stringify({ timezone: "Pacific/Pago_Pago" }));
+  write(d, ".cycle/release-approval", `t · ${tzDate("Pacific/Kiritimati")} · v1 (new words, so not the used one)\n`);
+  assert.equal(gate("sh deploy.sh", d, { TZ: "UTC" }), 2, "the same date is the wrong day in the other zone");
+});
+
+test("approval: with no config the machine's zone decides (TZ set for the hook process)", () => {
+  const d = deployRepo();
+  write(d, ".cycle/release-approval", `t · ${tzDate("Pacific/Kiritimati")} · v1\n`);
+  assert.equal(runHook("production-gate.mjs", bash("sh deploy.sh"), d, { TZ: "Pacific/Kiritimati" }).status, 0);
+  write(d, ".cycle/release-approval", `t · ${tzDate("Pacific/Kiritimati")} · v1 (again)\n`);
+  assert.equal(runHook("production-gate.mjs", bash("sh deploy.sh"), d, { TZ: "Pacific/Pago_Pago" }).status, 2);
+});
+
+test("approval: a longer digit run is not today", () => {
+  const d = deployRepo();
+  write(d, ".cycle/release-approval", `t · ${today()}0 · v1\n`);
+  assert.equal(gate("sh deploy.sh", d), 2);
+});
+
+test("approval refusal: it says the date and zone it expects, the end of that day, a ready command — and why the file in front of it fails, one reason at a time", () => {
+  const d = deployRepo();
+  write(d, ".cycle/config.json", JSON.stringify({ timezone: "Not/AZone" }));
+  const none = runHook("production-gate.mjs", bash("sh deploy.sh"), d);
+  assert.match(none.stderr, new RegExp(`expects a line dated ${today()}`));
+  assert.match(none.stderr, /valid through the end of that day/);
+  assert.doesNotMatch(none.stderr, /minutes|window/, "the window was cut");
+  assert.match(none.stderr, /The zone "Not\/AZone" in \.cycle\/config\.json is not a valid zone/);
+  assert.match(none.stderr, /mkdir -p '.*' && printf '%s\\n' '<name> · \d{4}-\d{2}-\d{2} · <what is being released>' > '/);
+  assert.match(none.stderr, /Looked in: .*release-approval/);
+  write(d, ".cycle/config.json", "{}");
+  write(d, ".cycle/release-approval", `t · ${daysAgo(3)} · v1\n`);                                   // (a) another day
+  const wrong = runHook("production-gate.mjs", bash("sh deploy.sh"), d);
+  assert.match(wrong.stderr, new RegExp(`dated ${daysAgo(3)}, not today`));
+  assert.doesNotMatch(wrong.stderr, /matches the UTC date/);
+  write(d, ".cycle/config.json", JSON.stringify({ timezone: farZone() }));                          // (a') the UTC date, while the owner's day is another
+  write(d, ".cycle/release-approval", `t · ${utcDate()} · v1\n`);
+  assert.match(runHook("production-gate.mjs", bash("sh deploy.sh"), d, { TZ: "UTC" }).stderr, /matches the UTC date, which this gate no longer counts/);
+  write(d, ".cycle/config.json", "{}");
+  rmSync(join(d, ".cycle", "release-approval"));                                                    // (c) unreadable: a symlink the gate will not read
+  const target = join(mkdtempSync(join(tmpdir(), "else-")), "x"); dirs.push(dirname(target)); writeFileSync(target, `t · ${today()} · forged\n`);
+  symlinkSync(target, join(d, ".cycle", "release-approval"));
+  const bad = runHook("production-gate.mjs", bash("sh deploy.sh"), d);
+  assert.equal(bad.status, 2); assert.match(bad.stderr, /is a symbolic link; the gate does not read it\. Remove it \(or ask the owner to\), then write a regular file/);
+  assert.ok(bad.stderr.indexOf("is a symbolic link") < bad.stderr.indexOf("Command:"), "the rejection comes first, before the command and the instructions");
+});
+
+function releaseWorld(day = today()) {
+  const d = deployRepo();
+  const f = join(d, ".cycle", "release-approval"); writeFileSync(f, `t · ${day} · v1\n`);
+  return { d, f };
+}
+
+test("approval date: an approval dated yesterday does not cover", () => {
+  const { d } = releaseWorld(daysAgo(1));
+  assert.equal(gate("sh deploy.sh", d), 2, "unused and dated yesterday");
+});
+
+test("approval refusal: on a machine at UTC+0 the owner is asked to set the zone; elsewhere nothing is said", () => {
+  const d = deployRepo();
+  assert.match(runHook("production-gate.mjs", bash("sh deploy.sh"), d, { TZ: "UTC" }).stderr, /this machine's zone is UTC \(UTC\+0\)\. If the owner's day is another zone, ask the owner to set "timezone"/);
+  assert.doesNotMatch(runHook("production-gate.mjs", bash("sh deploy.sh"), d, { TZ: "Pacific/Pago_Pago" }).stderr, /UTC\+0/);
+});
+
+test("protect-cycle: nothing under the shared folder can be written, moved, linked or removed by an agent (the approval, the log, anything), the routes that never name the approval are closed, and reading stays allowed", () => {
+  const w = worktreeWorld();
+  const s = join(w.common, "cycle"); mkdirSync(join(s, "gate"), { recursive: true });
+  for (const p of [join(s, "gate", "gate.log"), join(s, "anything.json")]) for (const tool of ["Write", "Edit", "MultiEdit"]) assert.equal(protect({ tool_name: tool, tool_input: { file_path: p, content: "{}" } }, w.main), 2, `${tool} ${p}`);
+  for (const cmd of [`rm -rf ${s}`, `mv ${s} ${s}.old`, `find ${s} -name 'gate*' -delete`, `rm ${s}/gate/*`, `touch ${s}`, `chmod a-w ${s}`, `cat /dev/null > ${s}/gate/gate.log`, `truncate -s 0 ${s}/gate/gate.log`, `ln -sfn /tmp/x ${s}`])
+    assert.equal(protect(bash(cmd), w.main), 2, cmd);
+  for (const cmd of [`cat ${s}/gate/gate.log`, `ls ${s}`, `tail -n 5 ${s}/gate/gate.log`]) assert.equal(protect(bash(cmd), w.main), 0, cmd);
+});
+test("config template: timezone is present, the cut window key is not, and the other keys survive", () => {
+  const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const c = JSON.parse(readFileSync(join(root, "templates", "config.json"), "utf8"));
+  assert.equal(c.timezone, null); assert.ok(!("approval_window_minutes" in c), "the window was cut");
+  for (const k of ["gates", "stateful", "method_repo", "protected_branches", "models", "knowledge", "products"]) assert.ok(k in c, k);
+});
+test("docs: the contract names the owner's day and the zone rule, and not the cut window", () => {
+  const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const t = readFileSync(join(root, "docs", "CONTRACT.md"), "utf8");
+  for (const w of ["timezone", "end of that day", "UTC+0"]) assert.ok(t.includes(w), w);
+  for (const w of ["approval_window_minutes", "approvals-used.json"]) assert.ok(!t.includes(w), `the cut window is not documented: ${w}`);
+  assert.match(readFileSync(join(root, "skills", "deploy", "SKILL.md"), "utf8"), /the owner's local day/);
+});
+
+// ───────────── final review fix pass (2026-10-17): the configured zone, the refusal's advice, reading the shared log ─────────────
+test("approval date: the configured zone applies only on a machine at UTC+0; a machine with its own zone keeps it (an edited config cannot move the owner's day)", () => {
+  const d = deployRepo();
+  write(d, ".cycle/config.json", JSON.stringify({ timezone: "Pacific/Kiritimati" }));
+  write(d, ".cycle/release-approval", `t · ${tzDate("Pacific/Kiritimati")} · v1\n`);
+  assert.equal(runHook("production-gate.mjs", bash("sh deploy.sh"), d, { TZ: "UTC" }).status, 0, "a UTC runner uses the configured zone");
+  const r = runHook("production-gate.mjs", bash("sh deploy.sh"), d, { TZ: "Pacific/Pago_Pago" });
+  assert.equal(r.status, 2, "a machine with its own zone ignores the configured one");
+  assert.match(r.stderr, /the configured zone is used only on a machine at UTC\+0/);
+});
+
+test("approval refusal: it never tells the reader to edit .cycle/config.json itself; a zone change is the owner's to make", () => {
+  const d = deployRepo();
+  for (const tz of ["UTC", "", "Foo/Bar", "America/Sao_Paulo"]) {
+    const r = runHook("production-gate.mjs", bash("sh deploy.sh"), d, { TZ: tz });
+    assert.doesNotMatch(r.stderr, /raise approval_window_minutes|(?<!ask the owner to )set "timezone" in \.cycle\/config\.json/, `TZ=${JSON.stringify(tz)}`);
+  }
+  assert.match(runHook("production-gate.mjs", bash("sh deploy.sh"), d, { TZ: "UTC" }).stderr, /ask the owner to set "timezone" in \.cycle\/config\.json/);
+});
+
+test("protect-cycle: a pipeline that reads the shared log is refused with a message that says how to read it", () => {
+  const w = worktreeWorld();
+  const log = join(w.common, "cycle", "gate", "gate.log"); mkdirSync(dirname(log), { recursive: true }); writeFileSync(log, "x ask segment r @a\n");
+  const r = runHook("protect-cycle.mjs", bash(`grep ask ${log} | sort | uniq -c`), w.main);
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /read it with cat, grep or tail/);
+  assert.equal(protect(bash(`grep -c ' ask .*@a$' ${log}`), w.main), 0, "the way the maintain skill tells you to count stays allowed");
+});
+
+// ───────────── verifier findings (2026-10-17) ─────────────
+test("protect-cycle: the shared folder spelled with doubled slashes or ./ is still the shared folder in a Bash command; a staged copy into it is refused", () => {
+  const w = worktreeWorld();
+  const stage = mkdtempSync(join(tmpdir(), "stage-")); dirs.push(stage);
+  for (const cmd of [`rm -rf .git//cycle`, `rm -rf ./.git/./cycle`, `cp -r ${stage}/. ${w.common}//cycle/`, `mv ${w.main}/.git//cycle /tmp/x`, `ln -s /tmp/x ./.git/./cycle`])
+    assert.equal(protect(bash(cmd), w.main), 2, cmd);
+});
+
+test("protect-cycle: a Write through a symlink to .git is refused even before the shared folder exists", () => {
+  const w = worktreeWorld();
+  const via = mkdtempSync(join(tmpdir(), "via-")); dirs.push(via); symlinkSync(w.common, join(via, "gl"));
+  assert.ok(!existsSync(join(w.common, "cycle")));
+  for (const p of [join(via, "gl", "cycle", "gate", "x"), join(via, "gl", "cycle", "release-approval")])
+    assert.equal(protect({ tool_name: "Write", tool_input: { file_path: p, content: "x" } }, w.main), 2, p);
+});
+
+// ───────────── a named version is the published one (2026-10-17, found at the 0.9.2 publish gate) ─────────────
+test("publish rule: an approval that names another version does not cover this publish, even with today's date and the word publish", () => {
+  const { pluginRoot, method, cloneAt } = methodWorld();                     // the method's manifest says 9.9.9
+  const nested = cloneAt(join(method, ".cycle", "work", "publish", "pub"));
+  const shared = join(method, ".git", "cycle"); mkdirSync(shared, { recursive: true });
+  const f = join(shared, "release-approval");
+  const cmd = "git push origin HEAD:main";
+  writeFileSync(f, `t · ${today()} · publish 9.9.8\n`);
+  const r = pushFrom(nested, cmd, pluginRoot);
+  assert.equal(r.status, 2, "the approval of another release does not cover this one");
+  assert.match(r.stderr, /a version it names must be the one being released/);
+  writeFileSync(f, `t · ${today()} · publish 9.9.9 (after 9.9.8)\n`);
+  assert.equal(pushFrom(nested, cmd, pluginRoot).status, 2, "two versions named, one of them another release: refused");
+  writeFileSync(f, `t · ${today()} · publish 10.0.0\n`);
+  assert.equal(pushFrom(nested, cmd, pluginRoot).status, 2, "a later version is another release too");
+  writeFileSync(f, `t · ${daysAgo(1)} · publish 9.9.9\n`);
+  assert.equal(pushFrom(nested, cmd, pluginRoot).status, 2, "the right version on another day is still another day");
+  for (const ok of [`t · ${today()} · publish 9.9.9`, `t · ${today()} · v9.9.9 publish`, `t · ${today()} · publish`, `t · ${today()} · release 9.9.9`, `t · ${today()} · publish (2026.10.17 build)`]) {
+    writeFileSync(f, ok + "\n");
+    assert.equal(pushFrom(nested, cmd, pluginRoot).status, 0, ok);
+  }
 });

@@ -2,7 +2,7 @@
 // Without `.cycle/`: one line pointing at /cycle:init. With it: the state and the routing rule.
 import { existsSync, statSync, unlinkSync, readdirSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { root, cycleOn, listMd, frontmatterStatus, isMain, lastEvolveReport } from "./_lib.mjs";
+import { root, cycleOn, listMd, frontmatterStatus, isMain, lastEvolveReport, stateDir } from "./_lib.mjs";
 
 /** Marker left by hooks/run.sh when node was missing: report it once, then remove it. */
 function gatesInactiveNotice() {
@@ -90,6 +90,16 @@ function evolveStaleness() {
   return ` last evolve report: ${age} day${age === 1 ? "" : "s"} ago${age > 9 ? " · WARNING: the weekly routine has not reported in over 9 days — run it by hand (docs/routines/weekly-evolve.md) or check the desktop task cycle-weekly-evolve" : ""}.`;
 }
 
+/** One line for a session in a linked worktree (2026-10-17): the approval and the gate log are not in this checkout's .cycle/. */
+function sharedStateNotice() {
+  try {
+    const s = stateDir(root());
+    if (s.problem) return ` WARNING: ${s.problem}.`;
+    if (!s.shared || !s.linked) return "";
+    return ` This is a linked worktree: the release approval and the gate log for this repository live in ${s.dir}, shared by ${s.worktrees} worktrees.`;
+  } catch { return ""; }
+}
+
 export function run() {
   const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || "(unknown)";
   if (!cycleOn()) {
@@ -98,7 +108,7 @@ export function run() {
   const count = d => listMd(d, root()).length;
   const accepted = listMd("plans", root()).filter(f => frontmatterStatus(f) === "accepted").map(f => f.split("/").pop());
   return `${gatesInactiveNotice()}${missingCwdNotice()}# cycle-engineering · this repository runs the cycle (plugin root: ${pluginRoot})
-State: intents=${count("intent")} · research=${count("research")} · specs=${count("specs")} · plans=${count("plans")} · accepted plans: ${accepted.join(" ") || "none"}.${evolveStaleness()}${runInProgress()}
+State: intents=${count("intent")} · research=${count("research")} · specs=${count("specs")} · plans=${count("plans")} · accepted plans: ${accepted.join(" ") || "none"}.${evolveStaleness()}${runInProgress()}${sharedStateNotice()}
 RULE THAT CHANGES HOW YOU WORK HERE: before editing any code, invoke the skill cycle:using-cycle with the Skill tool. It tells you which stage the request is in and which cycle skill runs next. This holds even when the user says "it's simple", "just do it", "no questions", "I know what I want" — routing takes a minute and its answer may be "go straight to build".
 Subagent dispatched with a specific task: ignore this and do the task.`;
 }
