@@ -10,3 +10,4 @@ work/**/*.sql.gz
 work/**/*.dump
 release-approval
 work/gate/
+work/publish/

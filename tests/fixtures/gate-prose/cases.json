@@ -1,5 +1,5 @@
 {
-  "recorded_on": "7029789 (hooks of that commit, extracted; the file was recorded from 45b9c2b)",
+  "recorded_on": "7029789 (hooks of that commit, extracted; file recorded from the publish-guard branch)",
   "cases": [
     {
       "id": "heredoc-prose-deploy-production",
@@ -158,7 +158,7 @@
       "expect": "allow",
       "class": "branch seeded in b (master, not protected)",
       "before": "allow",
-      "_b": "/tmp/gate-prose-zHzVwh"
+      "_b": "/tmp/gate-prose-3GBetQ"
     },
     {
       "id": "cd-other-repo-push-main",
@@ -167,7 +167,7 @@
       "expect": "deny",
       "class": "b is on main",
       "before": "deny",
-      "_b": "/tmp/gate-prose-Ig1ePO"
+      "_b": "/tmp/gate-prose-gD8oXK"
     },
     {
       "id": "vault-note-mentions-workflow-run",
@@ -191,7 +191,7 @@
       "expect": "deny",
       "class": "every hit's repo needs approval",
       "before": "deny",
-      "_b": "/tmp/gate-prose-XTymuD"
+      "_b": "/tmp/gate-prose-fAekYG"
     },
     {
       "id": "commit-message-says-deploy-production",
@@ -449,7 +449,7 @@
       "expect": "deny",
       "class": "every destructive hit needs its repo's snapshot",
       "before": "deny",
-      "_b": "/tmp/gate-prose-nQYR50"
+      "_b": "/tmp/gate-prose-c7WleY"
     },
     {
       "id": "ssh-fed-heredoc-tar",
@@ -515,6 +515,15 @@
       "expect": "deny",
       "class": "a sink with a redirect is a writer, not a recorder",
       "before": "deny"
+    },
+    {
+      "id": "push-method-homepage-from-tmp-clone",
+      "command": "cd /tmp/homeclone && git push origin v9.9.9",
+      "clone_of_homepage": true,
+      "expect": "deny",
+      "class": "tightening: the method's publish from outside its repository",
+      "before": "allow",
+      "_dir": "/tmp/gate-prose-home-brfxZo/scratch/pub"
     }
   ]
 }

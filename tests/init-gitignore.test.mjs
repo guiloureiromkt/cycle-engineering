@@ -55,3 +55,8 @@ test("commands/init.md points at the template and no longer spells a brace patte
   assert.match(init, /templates\/cycle-gitignore/);
   assert.doesNotMatch(init, /\*\.\{png/);
 });
+
+test("template ignores the publish clone's folder", () => {
+  const t = readFileSync(TEMPLATE, "utf8");
+  assert.match(t, /^work\/publish\/$/m);
+});

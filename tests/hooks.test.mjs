@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { commandDir, repoFor, gateRepo, commandView, walk, viewFor } from "../hooks/_lib.mjs";
+import { commandDir, repoFor, gateRepo, commandView, walk, viewFor, remoteTail } from "../hooks/_lib.mjs";
 
 const HOOKS = join(dirname(fileURLToPath(import.meta.url)), "..", "hooks");
 const hook = (name) => join(HOOKS, name);
@@ -564,8 +564,8 @@ test("gate-prose: before values were recorded by the replay script at a known co
 
 for (const c of GATE_PROSE.cases) {
   test(`gate-prose ${c.id}: ${c.before} → ${c.expect}`, () => {
-    const { dir, command } = prepareCase({ ...c });
-    const got = replay(dir, command);
+    const { dir, command, env } = prepareCase({ ...c });
+    const got = replay(dir, command, {}, env);
     assert.equal(got, c.expect, `${c.id} (${c.class})`);
   });
 }
@@ -666,4 +666,177 @@ test("viewFor: a consumer anywhere keeps quoted-tag heredoc bodies and sink quot
   assert.ok(w.segments.some((s) => /DROP TABLE users/.test(s.text)));
   const plain = viewFor(`cat > n.md <<'E'\nprose\nE`);
   assert.equal(plain.removed.length, 1, "no consumer: the body stays removed");
+});
+
+// ─── the method's publish is judged by the method (2026-10-16) ─────────────────
+function cleanEnv(extra = {}) { const e = { ...process.env, ...gitEnv, ...extra }; delete e.RELEASE_APPROVAL; delete e.CYCLE_GATE_LEGACY; delete e.CYCLE_UNATTENDED; return e; }
+function pushFrom(cwd, command, manifestDir, extraEnv = {}) {
+  const payload = JSON.stringify({ cwd, permission_mode: "default", tool_input: { command } });
+  return spawnSync(process.execPath, [hook("pre-bash.mjs")], { cwd, encoding: "utf8", input: payload, env: cleanEnv({ CLAUDE_PROJECT_DIR: cwd, CLAUDE_PLUGIN_ROOT: manifestDir, ...extraEnv }) });
+}
+/** A fake plugin root whose manifest names `homepage`, a bare remote at that URL, and a gated method repo. */
+function methodWorld() {
+  const base = mkdtempSync(join(tmpdir(), "method-")); dirs.push(base);
+  const bare = join(base, "guiloureiromkt", "cycle-engineering.git"); mkdirSync(join(base, "guiloureiromkt"), { recursive: true }); git(base, "init", "-q", "--bare", "-b", "main", bare);
+  const pluginRoot = join(base, "plugin"); mkdirSync(join(pluginRoot, ".claude-plugin"), { recursive: true });
+  writeFileSync(join(pluginRoot, ".claude-plugin", "plugin.json"), JSON.stringify({ name: "cycle", version: "9.9.9", homepage: bare }));
+  const method = repo();
+  writeFileSync(join(method, ".cycle", "config.json"), JSON.stringify({ method_repo: ".", protected_branches: ["main"], publish: { remote: bare } }));
+  writeFileSync(join(method, ".cycle", "gate.json"), JSON.stringify({ patterns: ["git push origin"] }));
+  mkdirSync(join(method, ".claude-plugin"), { recursive: true });
+  writeFileSync(join(method, ".claude-plugin", "plugin.json"), JSON.stringify({ name: "cycle", version: "9.9.9", homepage: bare }));
+  git(method, "add", "."); git(method, "commit", "-q", "-m", "manifest");
+  const cloneAt = (where, from = bare) => { mkdirSync(where, { recursive: true }); git(where, "clone", "-q", from, "."); writeFileSync(join(where, "x"), "x\n"); git(where, "add", "."); git(where, "commit", "-q", "-m", "x"); git(where, "tag", "v9.9.9"); return where; };
+  return { base, bare, pluginRoot, method, cloneAt };
+}
+
+test("publish rule: a push to the method's public repo from a clone OUTSIDE the method repo is denied outright, even with an approval next to it", () => {
+  const { base, pluginRoot, method, cloneAt } = methodWorld();
+  const tmpClone = cloneAt(join(base, "scratch", "pub"));
+  const r = pushFrom(tmpClone, "git push origin v9.9.9", pluginRoot);
+  assert.equal(r.status, 2, r.stderr);
+  assert.match(r.stderr, /publish of the method from outside its repository/);
+  assert.match(r.stderr, /scripts\/publish\.mjs/);
+  writeFileSync(join(method, ".cycle", "release-approval"), `t · ${new Date().toISOString().slice(0, 10)} · publish 9.9.9\n`);
+  assert.equal(pushFrom(tmpClone, "git push origin v9.9.9", pluginRoot).status, 2, "no approval anywhere lets an outside publish through");
+});
+
+test("publish rule: the same push from a clone nested under <method>/.cycle/work/publish/pub needs the method's approval — denied without, allowed with", () => {
+  const { pluginRoot, method, cloneAt } = methodWorld();
+  const nested = cloneAt(join(method, ".cycle", "work", "publish", "pub"));
+  const a = pushFrom(nested, "git push origin v9.9.9", pluginRoot);            // a tag: not a protected branch
+  assert.equal(a.status, 2, a.stderr);
+  assert.match(a.stderr, /publish of the method/);
+  assert.ok(a.stderr.includes(`Repository judged: ${method}\n`), a.stderr);
+  writeFileSync(join(method, ".cycle", "release-approval"), `t · ${new Date().toISOString().slice(0, 10)} · publish 9.9.9\n`);
+  assert.equal(pushFrom(nested, "git push origin v9.9.9", pluginRoot).status, 0);
+  assert.match(readFileSync(join(method, ".cycle", "work", "gate", "gate.log"), "utf8"), /deny segment publish of the method/);
+});
+
+test("publish rule: the routes the council listed all deny outside the method repo, and the remote-name injection never runs", () => {
+  const { base, bare, pluginRoot, cloneAt } = methodWorld();
+  const c = cloneAt(join(base, "scratch2", "pub"));
+  git(c, "remote", "add", "upstream", bare);
+  const deny = (cmd, env = {}) => { const r = pushFrom(c, cmd, pluginRoot, env); assert.equal(r.status, 2, `${cmd}: ${r.stderr}`); assert.match(r.stderr, /publish of the method/, cmd); };
+  deny("git push upstream v9.9.9");
+  deny(`git push ${bare} v9.9.9`);
+  deny(`git push --repo=${bare} v9.9.9`);
+  deny(`git push --repo ${bare} v9.9.9`);
+  deny("git push -o ci.skip origin v9.9.9");
+  deny("git --no-pager push origin v9.9.9");
+  deny("git push origin v9.9.9", { CYCLE_GATE_LEGACY: "1" });
+  deny("echo $'x'; git push origin v9.9.9");
+  deny("gh repo sync guiloureiromkt/cycle-engineering");
+  deny(`git clone ${bare} z && cd z && git push origin v9.9.9`);
+  for (const spelled of ["https://github.com/guiloureiromkt/cycle-engineering.git", "git@github.com:guiloureiromkt/cycle-engineering", "ssh://git@github.com:22/guiloureiromkt/cycle-engineering", "gh-gui:guiloureiromkt/cycle-engineering.git", "https://github.com/GuiLoureiroMKT/Cycle-Engineering/"]) {
+    git(c, "remote", "set-url", "upstream", spelled); deny("git push upstream v9.9.9");
+  }
+  const inj = pushFrom(c, "git push $(touch${IFS}canary) v9.9.9", pluginRoot);
+  assert.ok(!existsSync(join(c, "canary")), "the remote token never reached a shell");
+  assert.notEqual(inj.status, 0, "an unparseable remote token is not an allow");
+});
+
+test("publish rule: a renamed public repo is still guarded — the new tail comes from publish.previous_remotes of the session's method repo", () => {
+  const { base, bare, pluginRoot, method, cloneAt } = methodWorld();
+  const renamed = join(base, "org-new", "cycle-engineering.git"); mkdirSync(join(base, "org-new"), { recursive: true }); git(base, "init", "-q", "--bare", "-b", "main", renamed);
+  writeFileSync(join(method, ".cycle", "config.json"), JSON.stringify({ method_repo: ".", protected_branches: ["main"], publish: { remote: bare, previous_remotes: [renamed] } }));
+  const c = cloneAt(join(base, "scratch3", "pub"), renamed);
+  const r = spawnSync(process.execPath, [hook("pre-bash.mjs")], { cwd: c, encoding: "utf8", input: JSON.stringify({ cwd: c, permission_mode: "default", tool_input: { command: "git push origin v9.9.9" } }), env: cleanEnv({ CLAUDE_PROJECT_DIR: method, CLAUDE_PLUGIN_ROOT: pluginRoot }) });
+  assert.equal(r.status, 2, "new name, known through the session's method repo config: " + r.stderr);
+});
+
+test("publish rule: an ungated session and cwd are still guarded", () => {
+  const { base, pluginRoot, cloneAt } = methodWorld();
+  const c = cloneAt(join(base, "nowhere", "pub"));
+  const r = spawnSync(process.execPath, [hook("pre-bash.mjs")], { cwd: c, encoding: "utf8", input: JSON.stringify({ cwd: c, permission_mode: "default", tool_input: { command: "git push origin v9.9.9" } }), env: cleanEnv({ CLAUDE_PROJECT_DIR: base, CLAUDE_PLUGIN_ROOT: pluginRoot }) });
+  assert.equal(r.status, 2, r.stderr);
+});
+
+test("publish rule: inside the method repo a push to the public repo needs the method's approval directly, whatever the patterns say", () => {
+  const { pluginRoot, method, cloneAt, bare } = methodWorld();
+  writeFileSync(join(method, ".cycle", "gate.json"), JSON.stringify({ patterns: [] }));
+  const nested = cloneAt(join(method, ".cycle", "work", "publish", "pub"));
+  git(nested, "remote", "add", "upstream", bare);
+  for (const cmd of ["git push --tags origin", "git push upstream v9.9.9"]) assert.equal(pushFrom(nested, cmd, pluginRoot).status, 2, cmd);
+  writeFileSync(join(method, ".cycle", "release-approval"), `t · ${new Date().toISOString().slice(0, 10)} · publish 9.9.9\n`);
+  assert.equal(pushFrom(nested, "git push upstream v9.9.9", pluginRoot).status, 0);
+});
+
+test("publish rule: a push to some other remote from an ungated clone is untouched by the rule", () => {
+  const { base, pluginRoot } = methodWorld();
+  const other = join(base, "other.git"); git(base, "init", "-q", "--bare", "-b", "main", other);
+  const c = join(base, "elsewhere"); mkdirSync(c); git(c, "clone", "-q", other, "."); writeFileSync(join(c, "y"), "y\n"); git(c, "add", "."); git(c, "commit", "-q", "-m", "y");
+  const r = pushFrom(c, "git push origin HEAD:feat", pluginRoot);
+  assert.equal(r.status, 0, r.stderr);
+});
+
+// ─── publish guard, reworked after the final review (2026-10-16) ────────────────
+const methodWorld2 = methodWorld;
+const approve = (dir, text) => writeFileSync(join(dir, ".cycle", "release-approval"), `${text} ${new Date().toISOString().slice(0, 10)}\n`);
+
+test("publish guard: the reviewer's seven routes deny from outside the method repo", () => {
+  const { base, bare, pluginRoot, cloneAt } = methodWorld2();
+  const c = cloneAt(join(base, "r", "pub"));
+  const from = (cwd, cmd, env = {}) => spawnSync(process.execPath, [hook("pre-bash.mjs")], { cwd, encoding: "utf8", input: JSON.stringify({ cwd, permission_mode: "default", tool_input: { command: cmd } }), env: cleanEnv({ CLAUDE_PROJECT_DIR: cwd, CLAUDE_PLUGIN_ROOT: pluginRoot, ...env }) });
+  const deny = (cwd, cmd) => { const r = from(cwd, cmd); assert.equal(r.status, 2, `${cmd}: ${r.stderr}`); assert.match(r.stderr, /publish of the method/, cmd); };
+  deny(c, "git -c credential.helper= -c credential.helper='!gh auth git-credential' push origin v9.9.9");   // the script's own printed command
+  deny(c, `git -c core.x="a b" push origin v9.9.9`);
+  deny(base, `git -C ${c} push origin v9.9.9`);
+  deny(base, `git --git-dir=${c}/.git push origin v9.9.9`);
+  deny(base, `GIT_DIR=${c}/.git git push origin v9.9.9`);
+  deny(base, `env GIT_DIR=${c}/.git git push origin v9.9.9`);
+  deny(c, "git push --repo origin v9.9.9");
+  deny(c, "git push --repo=origin v9.9.9");
+  deny(base, `(cd ${c} && git push origin v9.9.9)`);
+  deny(base, `pushd ${c} && git push origin v9.9.9`);
+  deny(c, "git remote rename origin foo && git push foo v9.9.9");
+  deny(c, "gh release create v9.9.9");
+  deny(c, "gh pr merge 3");
+  deny(c, "gh repo sync");
+  const quoted = from(c, "git push 'origin' v9.9.9");
+  assert.equal(quoted.status, 2); assert.match(quoted.stderr, /publish of the method/); assert.doesNotMatch(quoted.stderr, /computed/);
+  const readOnly = from(c, "gh api repos/guiloureiromkt/cycle-engineering/releases");
+  assert.equal(readOnly.status, 0, `a GET is read-only even when it names the tail: ${readOnly.stderr}`);
+  deny(c, "gh api -X POST repos/guiloureiromkt/cycle-engineering/releases -f tag_name=v9.9.9");
+  deny(c, "gh api repos/guiloureiromkt/cycle-engineering/releases -f tag_name=v9.9.9");
+  const other = from(c, "gh api user");
+  assert.equal(other.status, 0, other.stderr);
+  void bare;
+});
+
+test("publish guard: the command publish.mjs prints is refused inside the gated clone without an approval that names the publish, and passes with one", () => {
+  const { pluginRoot, method, cloneAt } = methodWorld2();
+  const nested = cloneAt(join(method, ".cycle", "work", "publish", "pub"));
+  const cmd = "git -c credential.helper= -c credential.helper='!gh auth git-credential' push origin HEAD:main && git -c credential.helper= -c credential.helper='!gh auth git-credential' push origin v9.9.9";
+  const a = pushFrom(nested, cmd, pluginRoot);
+  assert.equal(a.status, 2, a.stderr); assert.match(a.stderr, /does not approve it today/);
+  approve(method, "t · x · just a deploy ·");                         // dated, but names neither publish nor the version
+  const b = pushFrom(nested, cmd, pluginRoot);
+  assert.equal(b.status, 2, "an approval that does not name the publish is not one");
+  approve(method, "t · publish 9.9.9 ·");
+  assert.equal(pushFrom(nested, cmd, pluginRoot).status, 0);
+});
+
+test("publish guard: a product repo that merely sets method_repo \".\" is not a method repository for the publish — denied outright, approval or not", () => {
+  const { base, pluginRoot, cloneAt } = methodWorld2();
+  const fake = repo(); writeFileSync(join(fake, ".cycle", "config.json"), JSON.stringify({ method_repo: "." }));
+  approve(fake, "t · publish 9.9.9 ·");
+  const nested = cloneAt(join(fake, ".cycle", "work", "publish", "pub"));
+  const r = pushFrom(nested, "git push origin v9.9.9", pluginRoot);
+  assert.equal(r.status, 2); assert.match(r.stderr, /from outside its repository/);
+  void base;
+});
+
+test("publish guard: a deny in an ungated directory never creates a .cycle there", () => {
+  const { base, pluginRoot, cloneAt } = methodWorld2();
+  const c = cloneAt(join(base, "u", "pub"));
+  const r = spawnSync(process.execPath, [hook("pre-bash.mjs")], { cwd: c, encoding: "utf8", input: JSON.stringify({ cwd: c, permission_mode: "default", tool_input: { command: "git push $(touch${IFS}canary) v9.9.9" } }), env: cleanEnv({ CLAUDE_PROJECT_DIR: c, CLAUDE_PLUGIN_ROOT: pluginRoot }) });
+  assert.equal(r.status, 2);
+  assert.ok(!existsSync(join(c, ".cycle")), "no .cycle was created in the ungated clone");
+  assert.ok(!existsSync(join(c, "canary")));
+});
+
+test("publish guard: the manifest's homepage is pinned to the upstream tail", () => {
+  const manifest = JSON.parse(readFileSync(join(HOOKS, "..", ".claude-plugin", "plugin.json"), "utf8"));
+  assert.equal(remoteTail(manifest.homepage), "guiloureiromkt/cycle-engineering");
 });

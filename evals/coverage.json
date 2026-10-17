@@ -56,6 +56,9 @@
   "scripts/port-check.mjs": {
     "tests": "tests/gate.test.mjs"
   },
+  "scripts/publish.mjs": {
+    "tests": "tests/publish.test.mjs"
+  },
   "scripts/resolve-seats.mjs": [
     "0007-council-seats-by-trigger",
     "0008-council-all-agree"

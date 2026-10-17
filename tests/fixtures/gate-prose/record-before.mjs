@@ -27,9 +27,10 @@ export function gated(patterns = [], branch = "main") {
 }
 
 /** Outcome of `command` sent from `dir`, exactly as the host sends it (cwd + permission_mode in the payload). */
-export function outcome(dir, command, extra = {}) {
+export function outcome(dir, command, extra = {}, extraEnv = {}) {
   const payload = JSON.stringify({ cwd: dir, permission_mode: "default", tool_input: { command }, ...extra });
-  const env = { ...process.env, ...gitEnv, CLAUDE_PROJECT_DIR: dir };
+  const env = { ...process.env, ...gitEnv, CLAUDE_PROJECT_DIR: dir, ...extraEnv };
+  delete env.RELEASE_APPROVAL; delete env.CYCLE_GATE_LEGACY; delete env.CYCLE_UNATTENDED;
   const a = spawnSync(process.execPath, [join(hooks, "pre-bash.mjs")], { cwd: dir, encoding: "utf8", input: payload, env });
   const b = spawnSync(process.execPath, [join(hooks, "protect-cycle.mjs")], { cwd: dir, encoding: "utf8", input: payload, env });
   for (const x of [a, b]) if (/no such file|can't open/i.test(x.stderr)) throw new Error(`stderr hygiene: ${x.stderr}`);
@@ -50,15 +51,28 @@ export function prepare(c) {
   }
   command = command.replace(/\/tmp\/gated\b/g, dir);
   if (c.snapshot_in_a) { mkdirSync(join(dir, ".cycle", "work", "x"), { recursive: true }); writeFileSync(join(dir, ".cycle", "work", "x", "snapshot.md"), "test snapshot\n"); }
+  let env = {};
+  if (c.clone_of_homepage) {                                   // a bare "public repo", a plugin manifest naming it, and a clone of it OUTSIDE any gated tree
+    const base = mkdtempSync(join(tmpdir(), "gate-prose-home-"));
+    const bare = join(base, "guiloureiromkt", "cycle-engineering.git"); mkdirSync(join(base, "guiloureiromkt"), { recursive: true });
+    sh(["git", "init", "-q", "--bare", "-b", "main", bare], base);
+    const plugin = join(base, "plugin"); mkdirSync(join(plugin, ".claude-plugin"), { recursive: true });
+    writeFileSync(join(plugin, ".claude-plugin", "plugin.json"), JSON.stringify({ name: "cycle", version: "9.9.9", homepage: bare }));
+    const clone = join(base, "scratch", "pub"); mkdirSync(clone, { recursive: true });
+    sh(["git", "clone", "-q", bare, "."], clone); writeFileSync(join(clone, "x"), "x\n"); sh(["git", "add", "."], clone); sh(["git", "commit", "-q", "-m", "x"], clone); sh(["git", "tag", "v9.9.9"], clone);
+    env = { CLAUDE_PLUGIN_ROOT: plugin };
+    command = command.replace(/\/tmp\/homeclone\b/g, clone);
+    c._dir = clone;
+  }
   if (c.approval_in_a) writeFileSync(join(dir, ".cycle", "release-approval"), `t · ${new Date().toISOString().slice(0, 10)} · test fixture\n`);
-  return { dir, command };
+  return { dir: c._dir || dir, command, env };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const data = JSON.parse(readFileSync(file, "utf8"));
   for (const c of data.cases) {
-    const { dir, command } = prepare(c);
-    c.before = outcome(dir, command);
+    const { dir, command, env } = prepare(c);
+    c.before = outcome(dir, command, {}, env);
   }
   data.recorded_on = sh(["git", "rev-parse", "--short", "HEAD"], join(here, "..", "..", "..")).stdout.trim();
   writeFileSync(file, JSON.stringify(data, null, 2) + "\n");

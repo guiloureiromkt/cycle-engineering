@@ -165,6 +165,17 @@ export function main(run) {
   }).catch((e) => block(`cycle hook: internal error (${e && e.message ? e.message : e})`));
 }
 
+// ─── a git remote as an owner/repo tail (2026-10-16) ───────────────────────────
+/** The `owner/repo` tail of a git remote spelled any way: https://github.com/a/b.git, git@github.com:a/b,
+ *  ssh://git@host:22/a/b, an ssh alias host:a/b, a local path /x/y/a/b.git/ — compared case-insensitively; the host is
+ *  ignored on purpose (a mirror of the same owner/repo is treated as the same target, the tighter reading). */
+export function remoteTail(url) {
+  let u = String(url || "").trim().replace(/[/\\]+$/, "").replace(/\.git$/i, "").replace(/[/\\]+$/, "");
+  u = u.replace(/^[a-z+]+:\/\//i, "").replace(/^[^@/:]+@/, "").replace(/^[^/:]+(?::\d+)?[:/]/, "");
+  const parts = u.split(/[/\\]+/).filter(Boolean);
+  return parts.length >= 2 ? parts.slice(-2).join("/").toLowerCase() : "";
+}
+
 // ─── the last routine report (2026-10-16) ─────────────────────────────────────────
 /** The newest weekly-evolve report in <repo>/.cycle/work/evolve/: a dated file (`YYYY-MM-DD.md` or `YYYY-MM-DD-N.md`)
  *  whose frontmatter says `routine: weekly-evolve` and not `status: did not complete`. Owner-triggered evolve reports,
