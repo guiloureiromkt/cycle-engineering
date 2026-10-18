@@ -4,7 +4,12 @@ status: draft            # draft → accepted → closed
 author: <name (area)>
 date: <YYYY-MM-DD>
 origin: person | ticket | incident | agent
-accepted_by: <name · date>
+accepted_by: <name · date · "their words">
+request: objective | problem | desire | intention      # cycle:diagnosis
+size: quick | small | project                           # cycle:diagnosis · S | M | L before 0.10.0, never translated
+path: known | someone-knows | nobody-knows | split
+stakes: []                                              # ids from skills/diagnosis/references/stakes.md
+size_sentence: "<the diagnosis sentence, verbatim>"
 ---
 
 # Intent: <short name, in the words of whoever asked>

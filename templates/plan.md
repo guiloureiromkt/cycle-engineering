@@ -4,6 +4,7 @@ status: draft            # draft → accepted · accepted is the precondition fo
 spec: specs/<file>.md
 intent: intent/<file>.md
 date: <YYYY-MM-DD>
+size: <copied from the intent: quick | small | project>
 accepted_by: <name · date>
 gates: [graph, advocate, pre-mortem, council, loop]   # in lite mode write "council: skipped" when it did not run
 council: [minimalist, user, maintainer, payer, security, operator, pollyana, scenario]   # + the pool ids that sat (from scripts/resolve-seats.mjs)

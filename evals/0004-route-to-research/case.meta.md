@@ -14,3 +14,6 @@
 | a benchmark's evidence is a fetched URL or an existing file | `the-artifact-holds-up`, condition 4 |
 
 **hand-checks:** `node evals/grade-research.mjs research/dark-mode.md` exiting 0 — run it by hand on the produced artifact; the llm grader judges the same rules but is not the script.
+
+### 2026-10-17 · no run, and why
+Slice 1 (the diagnosis) changed a file this case covers, but its fixture has no `size:`, which keeps the old path by design (asserted by `tests/diagnosis.test.mjs`), and `small`/`project` keep the five gates until slice 7. 0002 and 0017 ran for the routing and the session text; 0018 and 0019 for the new skill.

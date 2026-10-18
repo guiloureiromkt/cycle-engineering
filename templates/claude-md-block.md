@@ -1,6 +1,6 @@
 <!-- cycle:start -->
 ## Cycle (plugin `cycle` · Cycle Engineering)
-This repo runs the cycle: intent → research → spec → plan → build → test → deploy → maintain (→ evolve). Before editing code, invoke `cycle:using-cycle` with the Skill tool.
+This repo runs the cycle: intent → research → spec → plan → build → test → deploy → maintain (→ evolve). Before starting work that builds or changes something, code or not, invoke `cycle:using-cycle` with the Skill tool.
 - Rules 1–3 below govern a session that changes this repository's source (code, skills, hooks, rules); Rule 4 and the deploy gate hold for every session.
 - A routine this repository runs (cron, Actions, scheduled loop), writing its own outputs, is the product running: it needs no plan and skips `cycle:using-cycle`. It cannot push to a protected branch or deploy without approval; one that needs `main` opens a pull request.
 - Artifacts: `intent/` · `research/` · `specs/` · `plans/` · `evals/` · `.cycle/`.

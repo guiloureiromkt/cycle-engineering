@@ -5,7 +5,7 @@ description: Where this repository is in the cycle (intent → spec → plan →
 Read the state of the cycle in this repository and answer in at most 12 lines:
 
 1. List `intent/*.md`, `research/*.md`, `specs/*.md` and `plans/*.md` with each one's `status` (frontmatter). If `.cycle/` does not exist, say the repo has not been started on the cycle and point to `/cycle:init`.
-2. For each intent, say which stage it is in: accepted, no spec and no research done → Research; research done, no spec → Spec; spec without plan → Plan; draft plan → gates pending; accepted plan → Build; build done without pasted proof → Test; PR open → Deploy.
+2. For each intent, say which stage it is in: an intent with `size: quick` and an accepted ten-line plan → Build; `size: small` with `path: known` or with research done, and no plan → Plan (the spec may be skipped); accepted, no spec and no research done → Research; research done, no spec → Spec; spec without plan → Plan; draft plan → gates pending; accepted plan → Build; build done without pasted proof → Test; PR open → Deploy.
 3. Say which cycle skill runs next for each one (`cycle:intent`, `cycle:research`, `cycle:spec`, `cycle:plan`, `cycle:build`, `cycle:test`, `cycle:deploy`, `cycle:maintain`).
 4. Look in `<git-common-dir>/cycle/release-approval` **and** in `.cycle/release-approval`; show each file that exists with its path, content and date (both can exist with different dates); if neither does, say production deploy is blocked by the gate. Show `gates` and `stateful` from `.cycle/config.json`.
 

@@ -8,12 +8,14 @@ description: Use when an intent/<name>.md has status accepted and no research/<n
 An accepted intent says what hurts. Nobody decides how to solve it before looking at how it has been solved. Output: `research/<name>.md` from the plugin template, `status: done`, five sections filled, every row of "What we know" with a source and a date. It is committed next to `intent/`, `specs/` and `plans/`, not under `.cycle/work/`, because it authorizes the spec the way the intent authorizes the research. The spec cites it.
 
 ## Depth, by trigger (say it in the first line of the artifact)
+**Size first.** The intent's `size:` (written by `cycle:diagnosis`) comes before the table: `quick` runs no research, and its plan says `research: skipped · quick`; `small` runs one `shallow` pass when `path:` is not `known`, and none when it is; `project` uses the table below. A stake or a trigger below can still make it deeper, and the deeper wins. An intent with no `size:`, or with `S`, `M`, `L`, uses the table as written.
+
 | Depth | When | What runs |
 |---|---|---|
-| **shallow** | bug with an accepted intent · size S | pass 1 (the two sweeps of `cycle:intent` §3, already in the intent) checked and extended; no benchmarks required; 20 minutes |
+| **shallow** | bug with an accepted intent · size S (before 0.10.0) | pass 1 (the two sweeps of `cycle:intent` §3, already in the intent) checked and extended; no benchmarks required; 20 minutes |
 | **standard** | a user surface, a screen, data, a market claim or a design | pass 1 + benchmarks + the host's deep-research skill in `quick` mode when it exists, else one fresh-context researcher on `models.research` |
 | **deep** | a new product, or money | standard + deep-research `standard` mode, or two researchers (inside · outside) in parallel |
-When two triggers light, the deeper one wins: a size-S change that touches a screen is `standard`, not `shallow`. The owner's hurry ("ten minutes", "no questions") never lowers the depth; it shortens the prose. Never `ultradeep` inside a cycle. The shortcut of `cycle:using-cycle` is the only way to skip this stage entirely.
+When two triggers light, the deeper one wins: a size-S change that touches a screen is `standard`, not `shallow`. The owner's hurry ("ten minutes", "no questions") never lowers the depth; it shortens the prose. Never `ultradeep` inside a cycle. Size `quick`, size `small` with `path: known`, and, before 0.10.0, the router's shortcut skip this stage; nothing else does.
 
 ## Sources, in order
 1. **Inside.** The repo, its git log, and the knowledge base or vault when the host has one.

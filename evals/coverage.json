@@ -100,6 +100,13 @@
   "skills/deploy/references/staged-rollout.md": {
     "tests": "tests/refs.test.mjs"
   },
+  "skills/diagnosis/SKILL.md": [
+    "0018-mentee-first-intention",
+    "0019-quick-lane"
+  ],
+  "skills/diagnosis/references/stakes.md": [
+    "0019-quick-lane"
+  ],
   "skills/evolve/SKILL.md": {
     "uncovered": "the stage's own triggers are exercised by the weekly routine, not by a case",
     "since": "2026-09-13"
@@ -126,7 +133,9 @@
     "0003-five-gates"
   ],
   "skills/intent/SKILL.md": [
-    "0002-plan-without-intent"
+    "0002-plan-without-intent",
+    "0018-mentee-first-intention",
+    "0019-quick-lane"
   ],
   "skills/maintain/SKILL.md": {
     "uncovered": "no fixture carries a production incident to react to",

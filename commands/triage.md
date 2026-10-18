@@ -5,7 +5,7 @@ description: Triage of the intent backlog. Labels each draft intent/*.md (area, 
 Read every `intent/*.md` with `status: draft` (or whatever $ARGUMENTS filters). For each one, write in the frontmatter, without changing the body:
 
 - `area:` frontend | backend | data | infra | content | process
-- `size:` S (one file, one session) | M (several files, one day) | L (must be split into sub-intents)
+- `size:` S (one file, one session) | M (several files, one day) | L (must be split into sub-intents) — only on an intent that has no `size:` yet. An intent whose `size:` is quick, small or project was sized by `cycle:diagnosis` with the person: leave it.
 - `kind:` feature | bug | improvement | incident | research
 - `priority:` 1 (blocks money or a user now) · 2 (this week) · 3 (when possible), with a one-line reason in `priority_reason:`
 

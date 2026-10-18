@@ -109,7 +109,7 @@ export function run() {
   const accepted = listMd("plans", root()).filter(f => frontmatterStatus(f) === "accepted").map(f => f.split("/").pop());
   return `${gatesInactiveNotice()}${missingCwdNotice()}# cycle-engineering · this repository runs the cycle (plugin root: ${pluginRoot})
 State: intents=${count("intent")} · research=${count("research")} · specs=${count("specs")} · plans=${count("plans")} · accepted plans: ${accepted.join(" ") || "none"}.${evolveStaleness()}${runInProgress()}${sharedStateNotice()}
-RULE THAT CHANGES HOW YOU WORK HERE: before editing any code, invoke the skill cycle:using-cycle with the Skill tool. It tells you which stage the request is in and which cycle skill runs next. This holds even when the user says "it's simple", "just do it", "no questions", "I know what I want" — routing takes a minute and its answer may be "go straight to build".
+RULE THAT CHANGES HOW YOU WORK HERE: before starting work that builds or changes something, code or not, invoke the skill cycle:using-cycle with the Skill tool. It tells you which stage the request is in, how big it is and which cycle skill runs next. A question that changes nothing needs no routing; a routine writing its own outputs skips it. This holds even when the user says "it's simple", "just do it", "no questions", "I know what I want" — routing takes a minute and its answer may be "go straight to build", only when an accepted plan exists.
 Subagent dispatched with a specific task: ignore this and do the task.`;
 }
 

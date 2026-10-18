@@ -125,5 +125,11 @@
   },
   "0017-routine-keeps-running": {
     "fixture": "o"
+  },
+  "0018-mentee-first-intention": {
+    "fixture": "p"
+  },
+  "0019-quick-lane": {
+    "fixture": "q"
   }
 }

@@ -8,7 +8,7 @@ description: Use when plans/<name>.md has status accepted and it is time to writ
 Four rules. Everything else is optional.
 
 ## Rule 1 · Human-accepted plan before any code
-`plans/<x>.md` with `status: accepted` and `accepted_by`. Without it, no code edit. A trivial change uses the shortcut in `cycle:using-cycle` (ten-line plan, accepted), never zero plan.
+`plans/<x>.md` with `status: accepted` and `accepted_by`. Without it, no code edit. A quick change has a ten-line accepted plan written with its intent (`cycle:using-cycle`, Sizes), never zero plan.
 
 ## Rule 2 · Departed from the plan, update the plan in the same commit
 A validation the plan didn't ask for, a file outside the list, a skipped step, a changed order: edit `plans/<x>.md` before committing. The `plan-sync` hook blocks a code commit with no plan file staged, unless the commit message says `plan: unchanged` (or `[plan-ok]`). That phrase is a claim you make; use it only when it is true.

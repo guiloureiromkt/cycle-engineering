@@ -58,3 +58,6 @@ artifact in this suite, three of eight are 2–1 votes (`0006` on 2026-09-13, `0
 `0008` once). This change removes the measured cause of the flip — where the run writes — and leaves
 the judge's noise where it was. If this case flips again with a plan that carries rows, the remaining
 cause is the judge, and that is the intent's open question about advisory verdicts, not a re-run.
+
+### 2026-10-17 · no run, and why
+Slice 1 (the diagnosis) changed a file this case covers, but its fixture has no `size:`, which keeps the old path by design (asserted by `tests/diagnosis.test.mjs`), and `small`/`project` keep the five gates until slice 7. 0002 and 0017 ran for the routing and the session text; 0018 and 0019 for the new skill.

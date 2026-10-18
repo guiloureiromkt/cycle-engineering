@@ -3,7 +3,7 @@
 Marketplace: `cycle-engineering` (repo name). Plugin: `cycle`. Install: `claude plugin marketplace add guiloureiromkt/cycle-engineering` then `claude plugin install cycle@cycle-engineering`. Local during build: `claude plugin marketplace add <path to this working copy>`.
 
 ## Names
-- Skills (own, 10): `cycle:using-cycle`, `cycle:intent`, `cycle:research`, `cycle:spec`, `cycle:plan`, `cycle:build`, `cycle:test`, `cycle:deploy`, `cycle:maintain`, `cycle:evolve`.
+- Skills (own, 11): `cycle:using-cycle`, `cycle:diagnosis`, `cycle:intent`, `cycle:research`, `cycle:spec`, `cycle:plan`, `cycle:build`, `cycle:test`, `cycle:deploy`, `cycle:maintain`, `cycle:evolve`.
 - Skills (bundled copies from obra/superpowers, MIT, 8): `cycle:brainstorming`, `cycle:writing-plans`, `cycle:executing-plans`, `cycle:subagent-driven-development`, `cycle:tdd`, `cycle:verify-before-done`, `cycle:parallel-agents`, `cycle:worktrees`.
 - Skills (bundled, other): `cycle:gauntlet` (Shumer/robonuggets, CC BY 4.0).
 - Skills (own, rewritten in English, 4): `cycle:verification-gate`, `cycle:task-graph`, `cycle:adoption-filter`, `cycle:constraints` (the last one carries an external credit too — `CREDITS.md`, Addy Osmani's `constraint-driven-development`, MIT — where the first three carry none).
@@ -18,8 +18,9 @@ Marketplace: `cycle-engineering` (repo name). Plugin: `cycle`. Install: `claude 
 CLAUDE.md block lives between `<!-- cycle:start -->` and `<!-- cycle:end -->`; init and uninstall operate only inside the markers.
 
 ## Frontmatter
-Keys: `type`, `status`, `author`, `date`, `origin`, `intent`, `research`, `spec`, `depth`, `accepted_by`, `approved_by`, `gates`, `council`, `joker`.
+Keys: `type`, `status`, `author`, `date`, `origin`, `intent`, `research`, `spec`, `depth`, `accepted_by`, `approved_by`, `request`, `size`, `path`, `stakes`, `size_sentence`, `gates`, `council`, `joker`.
 Statuses: intent `draft|accepted|closed` · research `draft|done` · spec `draft|approved` · plan `draft|accepted`.
+Values written by `cycle:diagnosis` (0.10.0): `request` objective|problem|desire|intention · `size` quick|small|project, copied from the intent into the plan, the intent's counting when they differ (artifacts before 0.10.0 say S|M|L or nothing, are never translated, and keep the old path) · `path` known|someone-knows|nobody-knows|split · `stakes` a list of ids from `skills/diagnosis/references/stakes.md`, `[]` when none · `size_sentence` the sentence the person read, verbatim and quoted.
 
 ## Magic strings
 - Commit message containing `plan: unchanged` or `[plan-ok]` satisfies plan-sync.

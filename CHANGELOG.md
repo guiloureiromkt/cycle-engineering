@@ -4,6 +4,23 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-17
+
+The cycle stops treating every request like a software change. Before research, the intent runs a **diagnosis**: it names what kind of request it is, asks the first question that kind needs, and says in one plain sentence how big the work is and what runs next. A quick request skips research, spec and the reviews before the build; four stakes can only raise the size. Built for the owner's mentees, who are neither developers nor marketers and run the cycle by conversation.
+
+### Added
+- **`cycle:diagnosis`** (`skills/diagnosis/SKILL.md`). Two moments and no extra stop: one opening question by kind (objective → the measure and the date; problem → what happens today; desire → what job it would do; intention → why), and a closing sentence with the size (quick · small · project), how known the path is (known · someone knows · nobody knows · split) and the stakes, shown with the intent and accepted with it. "Não sei" never stops the work; a question that changes nothing is answered, not sized; the size only grows; a stake found during the work stops it.
+- **`skills/diagnosis/references/stakes.md`**: the four stakes (money, speaking to people outside, permission, data that does not come back), the only place they are listed, with what holds them today (hooks for deploys and destructive commands, `gate.json` patterns for a send that runs as a shell command) and what does not yet (MCP connectors: draft intent `an-outbound-action-has-a-gate`).
+- Intent keys `request`, `size`, `path`, `stakes`, `size_sentence`; `size:` in the plan template.
+- Eval cases **0018** (a mentee's first intention, in Portuguese) and **0019** (the quick lane end to end), each with a RED recorded before the change.
+
+### Changed
+- The router and the session text reach work that is not code ("before starting work that builds or changes something, code or not") and let questions and routines through. The router never sizes: a new request always opens the intent.
+- Research, spec, plan, build, `/cycle` and `/cycle:triage` follow the intent's size. `quick` is the only way to skip research and spec, and still has a ten-line plan accepted with one word; `small` asks one round of questions and may skip the spec; a stake brings the council without asking, whatever `gates:` says.
+
+### Kept
+- An artifact with no `size:`, or with the old `S`, `M`, `L`, keeps the old path. `small` and `project` keep the five gates until slice 7 (gates by size and the cost rule).
+
 ## [0.9.2] - 2026-10-17
 
 The release approval had two defects that cost the owner real nights: it counted the date in UTC (an approval written at 22:00 in Brasília was already "tomorrow's" and the push was refused), and it belonged to one checkout, while the owner works in many worktrees (26 in one repository). Closed as two intents through the whole ring: research, spec, plan (five gates each, the advocate, the council and the Mule in fresh contexts), build, a final review in a fresh context, with every block of code run in a scratch clone before the plans were written.

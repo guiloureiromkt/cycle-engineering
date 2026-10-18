@@ -46,12 +46,14 @@ Then, inside a repository, run `/cycle:init`. It creates `.cycle/` (config, gate
 
 An accepted intent says what hurts. Nobody decides how to solve it before looking at how it has been solved: that is why research sits between intent and spec, and why the devil's advocate opens on the research's weakest assumption.
 
+Before research, the intent runs a **diagnosis**: it names the kind of request (objective, problem, desire, intention), asks the first question that kind needs, and says in one sentence how big the work is (quick, small or project) and what runs next. Quick skips research, spec and the reviews before the build; four stakes (money, speaking to people outside, permission, data that does not come back) can only raise the size and always bring the council.
+
 Each stage is a skill (`cycle:<stage>`). The table says what each one leaves in git and where a human signs.
 
 | Stage | What it commits | Human gate |
 |---|---|---|
 | `cycle:intent` | `intent/<name>.md`: the problem, who has it, what done looks like; sub-intents; a sweep of what already exists inside and outside the repo. | A named person accepts it (`status: accepted`, `accepted_by`). |
-| `cycle:research` | `research/<name>.md`: what we know (sourced, dated, typed by confidence), what the market does (three to five benchmarks, direct and indirect, used not read), what we assume, what we did not check, a recommendation for the spec. Depth by trigger: shallow for a bug, deep for a new product or money. | None. `status: done` is the precondition for the spec. The only skip is the router's shortcut, which also skips the spec. |
+| `cycle:research` | `research/<name>.md`: what we know (sourced, dated, typed by confidence), what the market does (three to five benchmarks, direct and indirect, used not read), what we assume, what we did not check, a recommendation for the spec. Depth by trigger: shallow for a bug, deep for a new product or money. | None. `status: done` is the precondition for the spec. Size quick skips it, and the spec; size small runs one shallow pass only when the path is not known. |
 | `cycle:spec` | `specs/<name>.md`: requirements that can be checked one by one; design references and a wireframe when there is a screen. | A named person approves it (`status: approved`, `approved_by`). |
 | `cycle:plan` | `plans/<name>.md`: numbered tasks, files, risks, and the record of five gates (task graph, devil's advocate, pre-mortem, council, loop). | Accepted after the gates (`status: accepted`). Nothing is coded before this. |
 | `cycle:build` | One commit per numbered task; intermediates in `.cycle/work/<intent>/`. A change to the plan lands in the same commit as the code. | None. The accepted plan is the authorization. |
