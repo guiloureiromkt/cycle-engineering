@@ -4,6 +4,17 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-10-19
+
+The devil's advocate's return becomes a record. Gate 2 of `cycle:plan` stops letting the request dictate the answer's shape, saves the advocate's message verbatim and writes a ledger line, so how often the advocate changes a plan can be checked. The agent definition itself is unchanged: two edits were measured blind against it and neither beat it.
+
+### Changed
+- **Gate 2 of `cycle:plan` handles the devil's advocate's return as a record.** The request carries the four paths and nothing about the shape of the answer (210 of 228 recovered dispatches had dictated their own format, which overrides the agent's definition); the advocate's message is saved verbatim under `.cycle/work/<intent>/advocate-<round>.md` (it inherits the plan's confidentiality); every finding becomes a row, a rewrite deletes none, and the row names where in the plan it bites (`→ changes: <where>`); a ledger line under the table (`Advocate ledger (raw-return measure)`) counts findings and, at acceptance, lists the rows that changed the plan, so how often the advocate changes a plan can be checked against the git history. Baseline: 166 rows over 16 plans; the red and orange findings changed a plan 113 times in 119, the yellow ones 31 in 47; the raw return had never been saved, so those rates count only what the session kept.
+- The agent definition (`agents/devils-advocate.md`) is **unchanged**: two edits (a four-part finding with a Noted list; then a softer version) were run blind against the original, 22 and 6 runs, and neither beat it (the first lost about 15% of the known defects and one red line; the softer one tied on recall and cut 13% of the findings, with the same red line missing). Record: `.cycle/work/2026-10-17-the-advocate-is-calibrated/green.md`.
+
+### Added
+- `tests/advocate.test.mjs`: what gate 2 and the plan template must say about the advocate's return.
+
 ## [0.10.0] - 2026-10-17
 
 The cycle stops treating every request like a software change. Before research, the intent runs a **diagnosis**: it names what kind of request it is, asks the first question that kind needs, and says in one plain sentence how big the work is and what runs next. A quick request skips research, spec and the reviews before the build; four stakes can only raise the size. Built for the owner's mentees, who are neither developers nor marketers and run the cycle by conversation.

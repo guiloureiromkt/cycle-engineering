@@ -55,3 +55,9 @@ In their place, two `regex` graders read the artifact: `\nstatus:[ \t]*["']?draf
 
 ### 2026-10-17 · no run, and why
 Slice 1 (the diagnosis) changed a file this case covers, but its fixture has no `size:`, which keeps the old path by design (asserted by `tests/diagnosis.test.mjs`), and `small`/`project` keep the five gates until slice 7. 0002 and 0017 ran for the routing and the session text; 0018 and 0019 for the new skill.
+
+### 2026-10-19 · the advocate's gate (gate 2 of `cycle:plan`): run, and what the run was
+The change (the request carries no answer shape, the advocate's message is saved, a ledger line under the table) was run on this case before (commit `ffc479d`) and after (commit `40674f8`): **1.00 and 1.00**, one run each, graders unchanged. **Honest limit:** `40674f8` was an earlier form of the change (the agent body edited, gate 2 with a `Noted` list); the agent body was then reverted and gate 2 reworded, and **that final text was not run**. The next weekly `npm run evals` is the monitor. Record: `.cycle/work/2026-10-17-the-advocate-is-calibrated/evals-before.md` and `evals-after.md`.
+
+### 2026-10-19 · `templates/plan.md`: the advocate ledger line
+The template gained one line under the Risks table (`Advocate ledger (raw-return measure) …`). Run on this case before (`ffc479d`) and after (`40674f8`, an earlier form of the same line): 1.00 and 1.00. The final template text was not re-run.

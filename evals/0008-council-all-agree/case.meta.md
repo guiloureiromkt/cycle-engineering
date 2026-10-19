@@ -19,3 +19,6 @@
 
 ### 2026-10-17 · no run, and why
 Slice 1 (the diagnosis) changed a file this case covers, but its fixture has no `size:`, which keeps the old path by design (asserted by `tests/diagnosis.test.mjs`), and `small`/`project` keep the five gates until slice 7. 0002 and 0017 ran for the routing and the session text; 0018 and 0019 for the new skill.
+
+### 2026-10-19 · the advocate's gate (gate 2 of `cycle:plan`): no run, and why
+Gate 2's text and the plan template changed (see `CHANGELOG.md`, 0.10.1). **No run of this case**: the paid run was not bought (the owner stopped paid runs; the 0.10.1 gate is the free deterministic one), and the change adds no commit, no row and no stop to the flow this case grades. The risk is the same family as the earlier `the-mule-came-after-a-commit` caveat: it is judged by the next weekly `npm run evals`, whose red would open an intent, not block a tag. Cases `0003` and `0006` were run on an earlier form of the change (1.00 and 1.00).

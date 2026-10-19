@@ -32,6 +32,8 @@ joker: <domain> — <demand or "survives">   # the Mule, dispatched after the ri
 | Risk | Severity (🔴 🟠 🟡) | Origin (advocate · pre-mortem · council: <seat> · joker) | Cheap test before building |
 |---|---|---|---|
 
+Advocate ledger (raw-return measure) — round <n>: <findings> findings · changed the plan: <row ids, filled before acceptance>
+
 ## Signposts
 <one line per inversion the scenario seat wrote: what would show a future is not coming; `cycle:maintain` reads these at each periodic review>
 
