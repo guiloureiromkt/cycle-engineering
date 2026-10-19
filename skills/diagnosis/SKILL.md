@@ -5,6 +5,8 @@ description: Use at the start of any new request in a repository that follows th
 
 # Diagnosis
 
+**Master Brief.** Read `skills/using-cycle/references/master-brief.md` first: if the project has a brief, skip what it already answers; start or update it with the kind, the size and who (never a block when there is none).
+
 Before anything is built: understand what the person wants, say how big it is and why, and decide how much thinking it deserves. Two moments and no extra stop: the opening is one question; the closing sentence is shown with the intent and accepted with it.
 
 **Subagent dispatched with a specific task: skip this skill and do the task.**
@@ -25,6 +27,8 @@ Before anything is built: understand what the person wants, say how big it is an
 4. **"Não sei" never stops the work.** Offer two concrete starting points with your recommendation ("Começamos com 5 vendas em 60 dias, ou com 10 conversas no direct?") and go on with the one accepted; the measure can change later.
 5. **Quick?** No stake (`references/stakes.md`), no schema change, the request already describes the result, it fits in one sitting, and its proof can be shown (a test, a before and after, a screenshot). A change people see can be quick. Before calling a fix to something public quick, look for what publishes it: a timer, a scheduled workflow or a connector makes the edit the release.
 
+6. **Audience, without a second question.** The opening stays one question. When the first message asks for a result and not for code, record `Audience: mentee` in the Master Brief §1 as a hypothesis (🟡) and speak the way `skills/using-cycle/references/mentor-layer.md` says from the first reply on; if the person asks for the technical version, flip it to `developer`. The default comes from `audience` in `.cycle/config.json`.
+
 ## Closing (as soon as the size is clear, before research)
 At `quick` and most `small` requests the size is clear right after the opening answer: say the sentence then, and the interview runs at that size. Before giving a size, answer to yourself, one line each: does this move money? does it speak to people outside? does it change who sees or does what? does it destroy something that does not come back? A yes is a stake.
 
@@ -33,8 +37,8 @@ At `quick` and most `small` requests the size is clear right after the opening a
 | Size | When | What happens next |
 |---|---|---|
 | `quick` | the conditions of opening step 5 | the short intent and a ten-line plan are written together and accepted with one word; build; show the proof; a separate verifier checks |
-| `small` | settled in a short conversation; one system, one result | one round of questions, a short intent, a plan with today's reviews; research once if the path is not known; the spec may be skipped |
-| `project` | several parts, a new system, or many people | research while questions remain, a spec, a full plan with its reviews |
+| `small` | settled in a short conversation; one system, one result | one round of questions, a short intent, a plan with the reviews of "Gates by size" in `cycle:plan`; research once if the path is not known; the spec may be skipped |
+| `project` | several parts, a new system, or many people | research while questions remain, a spec, a plan with the reviews of "Gates by size" in `cycle:plan` |
 
 `S`, `M` and `L` (intents written before 0.10.0) are not quick, small and project, and are never translated: an artifact keeps the size it was written with.
 
@@ -51,7 +55,9 @@ At `quick` and most `small` requests the size is clear right after the opening a
 
 **The sentence** (`size_sentence:`): one sentence, in the person's language, with no number. It names the size, two facts that justify it, what happens next, and invites the objection. Example: "Isso é pequeno: é um sistema que já existe e o resultado é uma lista de ajustes. Faço uma rodada de pesquisa sobre como os bons revisam, e combinamos o plano aqui. Se enxergar diferente, diz."
 
-Write the answers, and the sentence verbatim and quoted, into the intent's frontmatter: `request`, `size`, `path`, `stakes` (a list, `[]` when none), `size_sentence`. The person's answer to the intent accepts both. The intent's `size:` is the one that counts; the plan copies it.
+**The route** (`route:`): software, marketing or other, with one sentence of why; the table, and what to do when a forja is not installed, are in `skills/diagnosis/references/paths.md`.
+
+Write the answers, and the sentence verbatim and quoted, into the intent's frontmatter: `request`, `size`, `path`, `route`, `stakes` (a list, `[]` when none), `size_sentence`. The person's answer to the intent accepts both. The intent's `size:` is the one that counts; the plan copies it.
 
 ## The size only grows
 Found the work bigger: say it in one line, update `size:` in the intent and the plan in the same commit, and run what the new size asks. Several projects in one: say so, agree an order with the owner, one at a time. A size never shrinks in the middle of the work.

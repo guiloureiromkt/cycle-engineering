@@ -43,8 +43,8 @@ Look at `intent/`, `research/`, `specs/`, `plans/` (frontmatter `status`). A fil
 | Size | Stops | Research | Spec | Reviews before the build | After the build |
 |---|---|---|---|---|---|
 | **quick** | 1: the intent and the ten-line plan, accepted with one word | none | none | none | proof shown + verifier |
-| **small** | 2: intent, plan | one shallow pass when the path is not known | optional; the size is the reason | as today (`cycle:plan`) | proof + verifier |
-| **project** | 2, plus the release | the trigger table of `cycle:research` | required | as today (`cycle:plan`) | proof + verifier |
+| **small** | 2: intent, plan | one shallow pass when the path is not known | optional; the size is the reason | advocate only when a real decision is left after research; none when the path is known | proof + verifier |
+| **project** | 2, plus the release | the trigger table of `cycle:research` | required | the advocate and the pre-mortem while a real decision is left (none on a known path); the Mule is offered here only (`cycle:plan`, "Gates by size") | proof + verifier |
 | any size **+ a stake** | the owner's step before the action, with the hand-written file for a production release | at least as above | as above | the council joins, without asking | as above |
 
 The stakes are listed once, in `skills/diagnosis/references/stakes.md`. `quick` skips research and spec and still has an accepted ten-line plan (`size: quick`, `research: skipped · quick`, `spec: skipped · quick`); `small` skips research when the path is known and may skip the spec, saying so in the plan; nothing else skips them. An artifact with no `size:`, or with `S`, `M`, `L` (written before 0.10.0), keeps the old path: research by trigger, a spec, all five gates; a legacy plan marked `research: skipped · shortcut` stays valid. Never give a size to an artifact that has none.

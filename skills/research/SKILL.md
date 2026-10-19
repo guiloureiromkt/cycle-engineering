@@ -5,6 +5,8 @@ description: Use when an intent/<name>.md has status accepted and no research/<n
 
 # Research (stage 2 · ammunition before decisions)
 
+**Master Brief.** Read `skills/using-cycle/references/master-brief.md` first: if the project has a brief, skip what it already answers; this stage writes §5.2 (market) and §5.3 (audience), one block per round.
+
 An accepted intent says what hurts. Nobody decides how to solve it before looking at how it has been solved. Output: `research/<name>.md` from the plugin template, `status: done`, five sections filled, every row of "What we know" with a source and a date. It is committed next to `intent/`, `specs/` and `plans/`, not under `.cycle/work/`, because it authorizes the spec the way the intent authorizes the research. The spec cites it.
 
 ## Depth, by trigger (say it in the first line of the artifact)
@@ -16,6 +18,9 @@ An accepted intent says what hurts. Nobody decides how to solve it before lookin
 | **standard** | a user surface, a screen, data, a market claim or a design | pass 1 + benchmarks + the host's deep-research skill in `quick` mode when it exists, else one fresh-context researcher on `models.research` |
 | **deep** | a new product, or money | standard + deep-research `standard` mode, or two researchers (inside · outside) in parallel |
 When two triggers light, the deeper one wins: a size-S change that touches a screen is `standard`, not `shallow`. The owner's hurry ("ten minutes", "no questions") never lowers the depth; it shortens the prose. Never `ultradeep` inside a cycle. Size `quick`, size `small` with `path: known`, and, before 0.10.0, the router's shortcut skip this stage; nothing else does.
+
+## Rounds (bounded by size)
+Research happens in named rounds, and the size says how many. **quick runs none**; **small** runs one round; **project** runs rounds while a question is still open. A round can be a visual benchmark, who already does this well, a market movement, a technical unknown. After each round the session says in **one line** whether another round is needed and why, or why it stops, and writes the round in the artifact's `## Rounds` table. **Hard stop at the third round**: whatever is still open goes to "What we did not check" and the owner decides. Never answer "I don't know": answer "I don't know yet; I will research" and say where (the `knowledge` library first, then outside). A planning file kept between rounds (a plan, findings, progress) is welcome; an external one goes through `cycle:adoption-filter` before anything is copied.
 
 ## Sources, in order
 1. **Inside.** The repo, its git log, and the knowledge base or vault when the host has one.

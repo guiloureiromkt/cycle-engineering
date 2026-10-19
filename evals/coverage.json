@@ -262,5 +262,17 @@
   ],
   "templates/spec.md": [
     "0001-route-to-spec"
-  ]
+  ],
+  "skills/using-cycle/references/master-brief.md": {
+    "tests": "tests/slices.test.mjs"
+  },
+  "skills/using-cycle/references/mentor-layer.md": {
+    "tests": "tests/slices.test.mjs"
+  },
+  "skills/diagnosis/references/paths.md": {
+    "tests": "tests/slices.test.mjs"
+  },
+  "templates/master-brief.md": {
+    "tests": "tests/slices.test.mjs"
+  }
 }

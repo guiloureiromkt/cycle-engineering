@@ -31,3 +31,6 @@ which is the whole point of a retro that comes from git instead of from the sess
 retro is hand-computed here, and a hand writes what it likes. The patterns now accept any shape
 within a few characters of the word (`flags: "i"`, since JS regexes have no inline `(?i)`), while
 still refusing a wrong number: `\b2\b` does not match `12`.
+
+### 2026-10-19 · slices 2 to 7 (0.11.0): no run, and why
+The Master Brief pointer, the mentor layer, research rounds, `## How we'll know`, the routes and the gates-by-size table changed the files listed below, which this case covers. **No run of this case:** the owner asked for a lean finish and for no paid or blind comparison; the change is text, the artifacts with no `size:` keep the five gates (this case's fixture carries no `size:` (checked by grep), and the skill text for that path is asserted by `tests/diagnosis.test.mjs`), and `tests/slices.test.mjs` checks the new text. The next weekly `npm run evals` is the monitor; a red there opens an intent and does not block a tag. Files: `skills/test/SKILL.md`.

@@ -8,6 +8,7 @@ accepted_by: <name · date · "their words">
 request: objective | problem | desire | intention      # cycle:diagnosis
 size: quick | small | project                           # cycle:diagnosis · S | M | L before 0.10.0, never translated
 path: known | someone-knows | nobody-knows | split
+route: software | marketing | other                      # cycle:diagnosis · where the work goes (skills/diagnosis/references/paths.md)
 stakes: []                                              # ids from skills/diagnosis/references/stakes.md
 size_sentence: "<the diagnosis sentence, verbatim>"
 ---

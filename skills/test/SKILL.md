@@ -5,7 +5,11 @@ description: Use after the build is finished and before any sentence of conclusi
 
 # Test = gauntlet + swarm review
 
+**Master Brief.** Read `skills/using-cycle/references/master-brief.md` first: if the project has a brief, skip what it already answers; when the proof is pasted, update §0 and §8.
+
 Models: read `.cycle/config.json` → `models`; pass the value as the `model` argument when dispatching the verifier (default `sonnet`), the gauntlet critic (`inherit`), research (`inherit`) and sweep subagents (`haiku`). The main session's model is the user's choice.
+
+**Proof by kind.** Software: the commands (test, lint, build) with the output pasted. Outside software (a page, a piece of content, a routine, a note): a judgment with a ruler through `cycle:gauntlet`, plus a look at where the person will actually meet it. The plan's `## How we'll know` says what is read later; this stage proves what is true now.
 
 1. **The session's own loop:** test, lint, build, output pasted; screens through a real browser (headless is fine), compared to the mock. Report it to the owner as numbered steps with one concrete next action — not free narration.
 2. **Prove the test bites:** break the code on purpose; the suite has to go red. A suite whose tests accept any exception is green and worthless.

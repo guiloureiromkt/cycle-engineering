@@ -5,6 +5,8 @@ description: Use when an intent/<name>.md has status accepted and no approved sp
 
 # Spec = Design
 
+**Master Brief.** Read `skills/using-cycle/references/master-brief.md` first: if the project has a brief, skip what it already answers; write the decisions taken and why this path in §2.
+
 Requirements and design in one session, with the repo's policies applied while writing. Output: `specs/<name>.md` from the plugin template — written `status: draft` and turned `approved` only by the owner's own word (step 6) — and, when there is a screen, an approved mock that becomes the plan's visual Proof.
 
 ## Precondition
@@ -15,7 +17,7 @@ Requirements and design in one session, with the repo's policies applied while w
 
 ## Steps
 1. **Policies in force.** Load the policy skills the repo's `CLAUDE.md` names (brand voice, design system, security review, whatever the repo has). List them under "Policies in force" in the spec. They constrain the writing; they are not a checklist afterwards. No `CONSTRAINTS.md` at the repo root and this spec's requirements touch a dimension worth constraining (coverage, security, performance, accessibility): invite `cycle:constraints` before writing requirements — don't block on it.
-2. **Requirements.** Run the prompt. Each requirement points to where it came from (intent section or sub-intent) and how it is verified (test · screenshot · metric).
+2. **Requirements.** Open the spec with `## How this solves the purpose, and why this path`: in plain words, how this solves what the intent asked and why this path and not the others, before any requirement. Then run the prompt. Each requirement points to where it came from (intent section or sub-intent) and how it is verified (test · screenshot · metric).
 3. **Design, when there is a screen, in this order:** visual reference (the benchmarks table of the research artifact, not a new search) → existing screen captured → one design prompt per surface → mock approved by the user before code. Details in `references/design-steps.md`. The approved mock is recorded by path in the spec and becomes the visual Proof of `plans/<x>.md`.
 4. **Areas of concern first.** Each policy conflict goes in the table with the policy owner. The product owner resolves it before engineering sees the spec.
 5. **Questions from the intent:** answered here or explicitly carried to the plan.

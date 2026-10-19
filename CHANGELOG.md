@@ -4,6 +4,29 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-19
+
+The Cycle becomes a guided way of thinking for a person who is not a developer: slices 2 to 7 of the keystone intent (`intent/2026-10-17-the-cycle-is-guided-thinking-for-any-intention.md`). Text and cheap tests only; no hook changed. What a real mentee does with it is not yet known.
+
+### Added
+- **The Master Brief** (`templates/master-brief.md`, `skills/using-cycle/references/master-brief.md`): the project's living state, numbered like the owner's canon (0 to 9). Every stage reads it first and updates it after; no brief never blocks; the `master_brief` key of `.cycle/config.json` (default `.cycle/master-brief.md`) lets a vault project and the forjas share one file. The `knowledge` notebooks are a read-only library.
+- **The mentor layer** (`skills/using-cycle/references/mentor-layer.md`): the pact, "company + number + date", plain words, three beats, one question at the three stops, the person's words verbatim, never the terminal except the one line to paste. Turned on by `Audience: mentee` in the brief (default from `audience` in the config).
+- **Routes** (`skills/diagnosis/references/paths.md`, `route:` in the intent): software, marketing (a forja, when installed) or other; a missing forja never blocks.
+- **Research in rounds** (`## Rounds`): none at quick, one at small, rounds while a question is open at project, a hard stop at the third.
+- **`## How we'll know`** in the plan: what number or judgment, where it is read, when, by whom; `cycle:maintain` reads it on the date.
+- **`## How this solves the purpose, and why this path`** opens the spec.
+- **Gates by size** in `cycle:plan` and the size table of `cycle:using-cycle`: a gate costs less than the change it reviews; a known path runs no advocate; the Mule is offered only at project.
+- `tests/slices.test.mjs`.
+
+### Changed
+- The acceptance of an intent and of a plan is the person's own word in chat, quoted verbatim; "no questions", "you decide" and silence never accept.
+- Proof by kind (`cycle:test`) and the release outside software, "out to people" (`cycle:deploy`).
+- An artifact with no `size:`, or with S, M, L, keeps the five gates.
+
+### Not done
+- The area and effort metadata and the optional PESO and AAARRR axes of the four-kinds sub-intent; the mentor layer carries no Portuguese file (`mentor-layer.<lang>.md` is meant to come from a plugin); no eval case has run any of this.
+- Five intents absorbed in part (`the-ring-has-three-sizes`, `acceptance-is-a-word-in-chat`, `the-cycle-outside-software`, `the-gates-cost-more-than-the-change`, `spec-skipped-two-thirds-of-the-time`) stay open with their remainders listed.
+
 ## [0.10.1] - 2026-10-19
 
 The devil's advocate's return becomes a record. Gate 2 of `cycle:plan` stops letting the request dictate the answer's shape, saves the advocate's message verbatim and writes a ledger line, so how often the advocate changes a plan can be checked. The agent definition itself is unchanged: two edits were measured blind against it and neither beat it.

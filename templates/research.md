@@ -21,6 +21,11 @@ Depth: <shallow | standard | deep> because <the trigger>.
 |---|---|---|---|---|---|
 | <3 to 5 rows; a single row is a defect> | | | | use · adapt · refuse | |
 
+## Rounds
+| Round | The question it asked | What ran | What it changed | Another round? (one line, why or why not) |
+|---|---|---|---|---|
+| 1 | | | | |
+
 ## What we assume
 - <assumption> — cheap check: <how to know in under an hour>
 

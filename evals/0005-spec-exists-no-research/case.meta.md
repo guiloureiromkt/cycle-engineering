@@ -36,3 +36,6 @@ In their place, two `regex` graders read the artifact: `\nstatus:[ \t]*["']?draf
 
 ### 2026-10-17 · no run, and why
 Slice 1 (the diagnosis) changed a file this case covers, but its fixture has no `size:`, which keeps the old path by design (asserted by `tests/diagnosis.test.mjs`), and `small`/`project` keep the five gates until slice 7. 0002 and 0017 ran for the routing and the session text; 0018 and 0019 for the new skill.
+
+### 2026-10-19 · slices 2 to 7 (0.11.0): no run, and why
+The Master Brief pointer, the mentor layer, research rounds, `## How we'll know`, the routes and the gates-by-size table changed the files listed below, which this case covers. **No run of this case:** the owner asked for a lean finish and for no paid or blind comparison; the change is text, the artifacts with no `size:` keep the five gates (this case's fixture carries no `size:` (checked by grep), and the skill text for that path is asserted by `tests/diagnosis.test.mjs`), and `tests/slices.test.mjs` checks the new text. The next weekly `npm run evals` is the monitor; a red there opens an intent and does not block a tag. Files: `skills/build/SKILL.md`, `skills/using-cycle/SKILL.md`.

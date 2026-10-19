@@ -43,5 +43,8 @@ Advocate ledger (raw-return measure) — round <n>: <findings> findings · chang
 - **Visual:** <screenshot matches mock X>
 - **Gauntlet:** <yes/no · what the critic compares>
 
+## How we'll know
+<what number, or what judgment with a ruler · where it is read · when we look · who reads it. `cycle:maintain` reads this on the date and a miss becomes an intent.>
+
 ## What the plan discarded
 <options the agent considered and did not choose, with reason>

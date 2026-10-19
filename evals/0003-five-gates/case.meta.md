@@ -61,3 +61,6 @@ The change (the request carries no answer shape, the advocate's message is saved
 
 ### 2026-10-19 · `templates/plan.md`: the advocate ledger line
 The template gained one line under the Risks table (`Advocate ledger (raw-return measure) …`). Run on this case before (`ffc479d`) and after (`40674f8`, an earlier form of the same line): 1.00 and 1.00. The final template text was not re-run.
+
+### 2026-10-19 · slices 2 to 7 (0.11.0): no run, and why
+The Master Brief pointer, the mentor layer, research rounds, `## How we'll know`, the routes and the gates-by-size table changed the files listed below, which this case covers. **No run of this case:** the owner asked for a lean finish and for no paid or blind comparison; the change is text, the artifacts with no `size:` keep the five gates (this case's fixture carries no `size:` (checked by grep), and the skill text for that path is asserted by `tests/diagnosis.test.mjs`), and `tests/slices.test.mjs` checks the new text. The next weekly `npm run evals` is the monitor; a red there opens an intent and does not block a tag. Files: `skills/plan/SKILL.md`, `templates/plan.md`.

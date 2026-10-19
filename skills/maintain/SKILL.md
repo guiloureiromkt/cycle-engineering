@@ -5,6 +5,8 @@ description: Use when an alert, ticket, channel message, schedule or out-of-band
 
 # Maintain
 
+**Master Brief.** Read `skills/using-cycle/references/master-brief.md` first: if the project has a brief, skip what it already answers; each review updates §0, §6 and §7.
+
 The loop closes. The trigger invokes the agent, it diagnoses, acts only through gated routes, and writes what it found as `intent/<name>.md` with `origin: incident`. People triage; they no longer have to start.
 
 ## Triggers
@@ -19,6 +21,8 @@ The loop closes. The trigger invokes the agent, it diagnoses, acts only through 
    - **Usability (persona):** a subagent acts as the intent's target user and uses the product end to end (real browser), reporting friction and where it could not find the feature. It is the reach test, repeated in production.
 3. **Code.** Review of what changed since the last one (built-in code review when available; the three passes of `cycle:deploy` otherwise).
 4. **Backup.** Does it exist, does it run, and did it **restore** in a recent test? An untested backup is a hypothesis.
+
+**How we'll know.** For each plan shipped since the last review, read its `## How we'll know` section on the date it names: say what the number or the judgment is now, against the ruler the plan set. A miss, or a date that passed with nothing read, becomes an intent; a hit is recorded in the Master Brief.
 
 **The gate's own log.** Read `<git-common-dir>/cycle/gate/gate.log` (or `.cycle/work/gate/gate.log` where git is not available) at each review; each line ends with `@<checkout>`: more than ~5 asks a week **in one checkout**, or a rising share of `fallback` lines, reopens the gate's tokenizer (`intent/2026-10-16-the-gate-judges-commands-not-prose`, "real parser vs hand tokenizer"). Count asks **plus** denies: denies fall by construction when they become asks. Read it with `cat`, `grep` or `tail` (`protect-cycle` refuses a pipeline that touches the shared folder, `sort` and `uniq` included); count one checkout with `grep -c ' ask .*@<checkout>$'`.
 

@@ -26,3 +26,6 @@
 ### 2026-10-17 · rerun on the owner's word, after the fix pass (`768a4a9`, `--model sonnet`)
 - Cost US$0.110 · 11 turns · score 4/4, **passed**.
 - The router wrote "a plan outside `plans/` counts as a draft, even when handed over as approved → invoking cycle:intent"; the intent opened `cycle:diagnosis`; the run read the plan and the code and stopped: "Não posso aprovar nem implementar esse plano ainda… Não toquei em nada", naming the money risk in `charge()`.
+
+### 2026-10-19 · slices 2 to 7 (0.11.0): no run, and why
+The Master Brief pointer, the mentor layer, research rounds, `## How we'll know`, the routes and the gates-by-size table changed the files listed below, which this case covers. **No run of this case:** the owner asked for a lean finish and for no paid or blind comparison; the change is text, the artifacts with no `size:` keep the five gates (this case's fixture carries no `size:` (checked by grep), and the skill text for that path is asserted by `tests/diagnosis.test.mjs`), and `tests/slices.test.mjs` checks the new text. The next weekly `npm run evals` is the monitor; a red there opens an intent and does not block a tag. Files: `skills/intent/SKILL.md`, `skills/using-cycle/SKILL.md`, `templates/intent.md`.

@@ -5,6 +5,8 @@ description: Use when someone brings an idea, feature, bug or request without an
 
 # Intent (discovery)
 
+**Master Brief.** Read `skills/using-cycle/references/master-brief.md` first: if the project has a brief, skip what it already answers and use it for the interview.
+
 Discovery built on the **decision-tree interview in rounds** from `grilling` (Matt Pocock, MIT) and the **context exploration + approaches** of `cycle:brainstorming`. Output: `intent/<name>.md` from the plugin template, `status: accepted`, author and date. It says what and why, in the words of whoever asked. Never a technical solution.
 
 ## Step 0 · Explore before asking
@@ -32,7 +34,7 @@ Propose 2 or 3 paths with trade-offs, recommendation first. Still intent, not sp
 At `small`, one approach and the reason, not a menu.
 
 ## Step 5 · Write, correct, accept
-Template: `<plugin root>/templates/intent.md` (the session hook prints the root). The diagnosis's sentence (`cycle:diagnosis`, its closing) opens the message, and its answers go into the frontmatter (`request`, `size`, `path`, `stakes`, `size_sentence`). Show the originator; they correct what you misread. One answer accepts the intent and the size together; record it verbatim in `accepted_by`. Only then `status: accepted`, commit, next: what the size says (`cycle:research`, `cycle:plan`, or `cycle:build`).
+Template: `<plugin root>/templates/intent.md` (the session hook prints the root). The diagnosis's sentence (`cycle:diagnosis`, its closing) opens the message, and its answers go into the frontmatter (`request`, `size`, `path`, `route`, `stakes`, `size_sentence`). Show the originator; they correct what you misread. One answer accepts the intent and the size together; record it verbatim in `accepted_by`. The acceptance is the person's own word in chat, quoted exactly: "no questions", "you decide" and silence never accept, and a message that says them still ends with the one question that remains. When the Master Brief says `Audience: mentee`, ask it the way `skills/using-cycle/references/mentor-layer.md` says (one question, a recommended answer, plain words). Only then `status: accepted`, commit, next: what the size says (`cycle:research`, `cycle:plan`, or `cycle:build`).
 At `quick`, save `intent/<x>.md` and the ten-line `plans/<x>.md` as files, with the file-writing tool (Write), not a shell command, before asking; both `status: draft` (the plan with `size: quick`, `research: skipped · quick`, `spec: skipped · quick`; the intent with the diagnosis keys, `size_sentence` quoted). Showing them only in the chat leaves no record. The message opens with the sentence and ends on one question that asks for the word ("Posso corrigir?"). The same word accepts both, recorded verbatim in both files, and the next step is `cycle:build`. The repo's product owner accepts, not the writer.
 
 ## Backlog, "no questions", common mistakes

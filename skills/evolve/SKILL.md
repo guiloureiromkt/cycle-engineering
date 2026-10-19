@@ -5,6 +5,8 @@ description: Use when a new model, skill or practice appears; when the repo's CL
 
 # Evolve (the stage outside the ring)
 
+**Master Brief.** Read `skills/using-cycle/references/master-brief.md` first: if the project has a brief, skip what it already answers; record what changed in §8.
+
 Most playbooks stop at maintain. The cycle adds an agent that watches the method itself. Four fronts. Everything it produces is a **proposal**: an intent or a PR. It never changes the method on its own.
 
 ## When it runs

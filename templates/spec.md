@@ -9,6 +9,9 @@ approved_by: <name · date>
 
 # Spec: <intent name>
 
+## How this solves the purpose, and why this path
+<in plain words, before any requirement: how this solves what the intent asked, and why this path and not the others>
+
 ## What the intent asks (one sentence, in the originator's words)
 
 ## Policies in force

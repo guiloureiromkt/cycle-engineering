@@ -18,3 +18,6 @@
 - `the-diagnosis-fired` PASS (Skill called once); every other grader PASS.
 - Last message: "Isso é um objetivo: vender a mentoria. Antes de qualquer coisa, preciso de uma medida. **Quantas vendas você quer fazer pelo Instagram, e até quando?** Se ainda não tiver um número, sugiro começar com **5 vendas em 60 dias**. Se preferir, podemos mirar **10 conversas qualificadas no direct em 30 dias**. A meta pode mudar depois."
 - Hand-checks: Portuguese · read as an objective (measure and date) · proposes no campaign yet. All hold.
+
+### 2026-10-19 · slices 2 to 7 (0.11.0): no run, and why
+`skills/diagnosis/SKILL.md` and `skills/intent/SKILL.md`, which this case covers, changed: the diagnosis records the audience without adding a question to its opening (it stays one question), names a route, and reads the Master Brief; the intent skill states that the acceptance is the person's own word. **No run of this case** (the owner asked for a lean finish with no paid run). **The risk to watch in the next `npm run evals`:** that a mentee-like first message now gets a second question or a method word, which this case's graders (`asks-the-measure-or-the-date`, `no-process-words`) would catch. `tests/slices.test.mjs` only checks the new text.

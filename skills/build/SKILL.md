@@ -5,6 +5,8 @@ description: Use when plans/<name>.md has status accepted and it is time to writ
 
 # Build
 
+**Master Brief.** Read `skills/using-cycle/references/master-brief.md` first: if the project has a brief, skip what it already answers; when the build ends, update §0 and §8.
+
 Four rules. Everything else is optional.
 
 ## Rule 1 · Human-accepted plan before any code

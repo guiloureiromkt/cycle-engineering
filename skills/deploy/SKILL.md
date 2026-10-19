@@ -5,6 +5,8 @@ description: Use when the build passed its proof and is about to become a PR, a 
 
 # Deploy
 
+**Master Brief.** Read `skills/using-cycle/references/master-brief.md` first: if the project has a brief, skip what it already answers; after the release, update §0 and §8.
+
 The agent does everything up to the production gate and nothing past it. Review runs both ways: the agent reviews PRs and answers comments on its own.
 
 ## Steps
@@ -20,10 +22,13 @@ The agent does everything up to the production gate and nothing past it. Review 
 - **The method repo publishes only behind its own gate.** If `.cycle/config.json` has `method_repo: "."`, this repository *is* the method: a changed skill changes what every other repo is judged by. Publishing requires the output of `npm run gate` pasted in this session, green, from the commit being published. The gate is deterministic and free — unit tests, the commit-shape rule, the coverage map, a RED→GREEN record committed for every changed method file a case covers, `npm test` green inside `git archive HEAD`, no machine path — so: **no baseline, no publish**; a paid run is never the tag's condition. A closed cycle that changed a method file publishes a **patch version**; tag the previous release locally before the gate runs, so the base is one cycle back and the record rule reads only what that cycle changed. A paid check, when someone wants one, is one or two cases of `npm run evals`, whose numbers are the owner's (`docs/CONTRACT.md`).
 - **The publish runs from inside the gated tree, and the gate knows the method's remote.** `node scripts/publish.mjs <ref>` prepares the clone under `.cycle/work/publish/pub/`, refuses an unbumped version, and prints the push commands; run them from that directory. The production gate's publish guard judges by the remotes of the directories a command can reach, and refuses a push to the method's public repository from anywhere else, approval or not (2026-10-16: a clone in `/tmp` had escaped; the first guard read the text's shape and the final review found seven routes around it). Inside the method repository the push needs that repository's approval (`<git-common-dir>/cycle/release-approval`, shared by every worktree, or `.cycle/release-approval` for that checkout), written by a human, naming the publish: today's date and the word "publish" or the version being released.
 
+## Outside software
+The release of a page, a piece of content, a routine or a note is "out to people": it is what leaves the person's hands. It keeps the one-line approval of the production gate whenever it involves money or permission, and its proof is the judgment with a ruler of `cycle:test`.
+
 ## The production gate (plugin hook)
 A command that looks like a production deploy is blocked (exit 2) unless `RELEASE_APPROVAL` is set in the session or `<git-common-dir>/cycle/release-approval` (shared by every worktree) or `.cycle/release-approval` carries today's date. Write the file with the date the refusal prints: the owner's local day.
 
-**When blocked:** show the user the hook's message and stop. **The agent does not export the variable or create the file** (the `protect-cycle` hook blocks that as well). If the user says "release it", they write the file themselves (name · date · what is being released). Then run the command again.
+**When blocked:** show the user the hook's message and stop. For a mentee, say it in plain words and give the line to paste (the hook prints it; `skills/using-cycle/references/mentor-layer.md` says how). **The agent does not export the variable or create the file** (the `protect-cycle` hook blocks that as well). If the user says "release it", they write the file themselves (name · date · what is being released). Then run the command again.
 
 A deploy command the hook does not recognize: say which one and propose adding it to `.cycle/gate.json` → `patterns`. Do not work around it with another spelling of the same command.
 

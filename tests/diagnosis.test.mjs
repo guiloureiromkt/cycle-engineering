@@ -98,8 +98,9 @@ test("diagnosis: research, spec and plan read the size; a stake brings the counc
   assert.doesNotMatch(read("README.md"), /The only skip is the router's shortcut/);
 });
 
-test("diagnosis: the gates table waits for slice 7 — small and project keep the five gates", () => {
-  assert.doesNotMatch(read("skills/plan/SKILL.md"), /^## Gates by size/m);
+test("diagnosis: the gates table exists since slice 7 (0.11.0); an artifact with no size keeps the five gates", () => {
+  assert.match(read("skills/plan/SKILL.md"), /^## Gates by size/m);
+  assert.match(read("skills/plan/SKILL.md"), /no `size:`, or with S, M, L, runs the five gates below, as before/);
 });
 
 test("diagnosis: the router never sizes, and a plan-looking file outside plans/ goes to the intent (0019 and 0002 GREEN runs, 2026-10-17)", () => {
