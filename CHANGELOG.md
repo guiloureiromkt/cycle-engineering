@@ -4,6 +4,11 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-10-21
+
+### Changed
+- **The forjas are public.** `skills/diagnosis/references/paths.md` and `skills/using-cycle/references/master-brief.md` now point to the public package `guiloureiromkt/forjas` (Alma, Estratégia, Campo de Batalha, Expressa) instead of a private plugin; the keystone intent carries a dated note of the owner's revision. Text only.
+
 ## [0.11.0] - 2026-10-19
 
 The Cycle becomes a guided way of thinking for a person who is not a developer: slices 2 to 7 of the keystone intent (`intent/2026-10-17-the-cycle-is-guided-thinking-for-any-intention.md`). Text and cheap tests only; no hook changed. What a real mentee does with it is not yet known.

@@ -11,5 +11,5 @@ The diagnosis ends by naming a **route** (`route:` in the intent) and why, in on
 ## Rules
 - **The diagnosis names the route and says why in one sentence** ("this is marketing: you are asking what to say to whom"). The person can correct it.
 - **A forja that is not installed is said so, and the generic route continues.** The route never blocks: "the strategy forja is not here; I will take the generic path and keep the Master Brief ready for it".
-- **The forjas are not copied into this repository.** They stay in the private plugin as paths; what this repository carries is their common grammar, in `skills/using-cycle/references/mentor-layer.md`.
+- **The forjas live in their own public package, `guiloureiromkt/forjas`** (`/plugin marketplace add guiloureiromkt/forjas`, then `/plugin install forjas@forjas`; the skills are `/forjas:alma`, `/forjas:estrategia`, `/forjas:campo-de-batalha` and `/forjas:expressa`). Faísca and Narrativa are not public yet. The forjas are not copied into this repository; what this repository carries is their common grammar, in `skills/using-cycle/references/mentor-layer.md`.
 - **`route:` is not `path:`.** `path:` says how well the way is known (known, someone-knows, nobody-knows, split); `route:` says where the work goes.

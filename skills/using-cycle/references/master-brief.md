@@ -3,7 +3,7 @@
 An intent has its artifacts; a project has this. One file per project, read first and updated last by every stage, so nobody starts from zero and nobody asks twice.
 
 ## Where it lives
-The path is the `master_brief` key of `.cycle/config.json`; the default is `.cycle/master-brief.md`. A vault project points the key at its own file (for example `20_Projetos/<brand>/master-brief.md`). The private forjas read and write the brief at that same path, with the same section numbers (§5.4 brand, §7 route, §9 handoff): there is **no second brief**. When a brief already exists at the path, a stage uses it; it never creates another beside it.
+The path is the `master_brief` key of `.cycle/config.json`; the default is `.cycle/master-brief.md`. A vault project points the key at its own file (for example `20_Projetos/<brand>/master-brief.md`). The forjas (`guiloureiromkt/forjas`) read and write the brief at that same path, with the same section numbers (§5.4 brand, §7 route, §9 handoff): there is **no second brief**. When a brief already exists at the path, a stage uses it; it never creates another beside it.
 
 ## What every stage does
 1. **Read it first.** If it exists, skips what it already answers; never re-asks a person for something written here.
@@ -19,4 +19,4 @@ The path is the `master_brief` key of `.cycle/config.json`; the default is `.cyc
 - **Confidential material** is a pointer, not a copy: this file may be committed.
 
 ## The sections
-0 where we are · 1 who (and the audience) · 2 the decision or the problem, its kind and size, and the decisions taken · 3 hypotheses · 4 material received · 5 findings (5.1 diagnosis, 5.2 market research, 5.3 audience research, 5.4 brand, 5.5 strategy, 5.6 growth and channels, 5.7 scenarios; the same numbers as the owner's canon, so a forja and the Cycle never collide) · 6 open gaps · 7 recommended route and how we'll know · 8 history · 9 handoff. Template: `templates/master-brief.md`.
+0 where we are · 1 who (and the audience) · 2 the decision or the problem, its kind and size, and the decisions taken · 3 hypotheses · 4 material received · 5 findings (5.1 diagnosis, 5.2 market research, 5.3 audience research, 5.4 brand, 5.5 strategy, 5.6 growth and channels, 5.7 scenarios; the same numbers the forjas use, so a forja and the Cycle never collide) · 6 open gaps · 7 recommended route and how we'll know · 8 history · 9 handoff. Template: `templates/master-brief.md`.
